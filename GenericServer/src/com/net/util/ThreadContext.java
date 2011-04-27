@@ -40,10 +40,14 @@ public final class ThreadContext {
 	return context.get(Thread.currentThread());
     }
 
+    public static final boolean contains() {
+	return context.containsKey(Thread.currentThread());
+    }
+
     public static final void init() {
 	Thread current = Thread.currentThread();
 	if (context.containsKey(current) == false)
-	    context.put(current, new HashMap<Object, Object>(4));
+	    context.put(current, new HashMap<Object, Object>());
     }
 
     public static final void destory() {
