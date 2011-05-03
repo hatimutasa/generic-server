@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -23,7 +24,7 @@ import com.net.ResponseFactory;
 
 public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
     private Thread thread;
-    private Executor executer;
+    private ExecutorService executer;
 
     protected Selector selector;
 
@@ -42,9 +43,10 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
     protected Notifier<R, W> notifier;
 
-    public SocketConnector(Executor executer, Notifier<R, W> notifer, MessageReader<R, W> reader,
-	    MessageWriter<R, W> writer, RequestFactory<R> requestFactory,
-	    ResponseFactory<W> responseFactory) throws IOException {
+    public SocketConnector(ExecutorService executer, Notifier<R, W> notifer,
+	    MessageReader<R, W> reader, MessageWriter<R, W> writer,
+	    RequestFactory<R> requestFactory, ResponseFactory<W> responseFactory)
+	    throws IOException {
 
 	this.executer = executer;
 	this.selector = Selector.open();
@@ -66,17 +68,19 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
     }
 
-    public SocketConnector(Executor executer, RequestFactory<R> requestFactory,
+    public SocketConnector(ExecutorService executer, RequestFactory<R> requestFactory,
 	    ResponseFactory<W> responseFactory) throws IOException {
-	this(executer, new DefaultNotifier<R, W>(), new DefaultMessageReader<R, W>(),
-		new DefaultMessageWriter<R, W>(), requestFactory, responseFactory);
+	this(executer, new DefaultNotifier<R, W>(),
+		new DefaultMessageReader<R, W>(),
+		new DefaultMessageWriter<R, W>(), requestFactory,
+		responseFactory);
     }
 
-    public SocketConnector(RequestFactory<R> requestFactory, ResponseFactory<W> responseFactory)
-	    throws IOException {
-	this(
-		new ThreadPoolExecutor(20, 256, 1, TimeUnit.HOURS,
-			new LinkedBlockingQueue<Runnable>()), requestFactory, responseFactory);
+    public SocketConnector(RequestFactory<R> requestFactory,
+	    ResponseFactory<W> responseFactory) throws IOException {
+	this(new ThreadPoolExecutor(20, 256, 1, TimeUnit.HOURS,
+		new LinkedBlockingQueue<Runnable>()), requestFactory,
+		responseFactory);
     }
 
     public void run() {
@@ -86,7 +90,10 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	SelectionKey key;
 	int size;
 	try {
-	    init();
+	    synchronized (this) {
+		init();
+		this.notify();
+	    }
 	    while (current == thread) {
 		size = selector.select();
 		if (size == 0) {
@@ -122,6 +129,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
     }
 
     protected void destory() {
+	this.executer.shutdown();
 	reader.destory();
 	writer.destory();
     }
@@ -149,7 +157,8 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
 	while (this.sspPool.isEmpty() == false)
 	    try {
-		this.addRegistor(this.sspPool.poll(), SelectionKey.OP_ACCEPT, null);
+		this.addRegistor(this.sspPool.poll(), SelectionKey.OP_ACCEPT,
+			null);
 	    } catch (Exception e) {
 		this.notifier.fireOnError(e);
 	    }
@@ -197,8 +206,15 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	if (this.notifier.isEmpty())
 	    throw new NullPointerException("没有注册任何处理器。");
 
-	thread = new Thread(this);
-	thread.start();
+	synchronized (this) {
+	    thread = new Thread(this);
+	    thread.start();
+	    try {
+		this.wait();
+	    } catch (InterruptedException e) {
+		e.printStackTrace();
+	    }
+	}
     }
 
     public void stop() {
