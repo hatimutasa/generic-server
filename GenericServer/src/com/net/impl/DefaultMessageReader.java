@@ -1,6 +1,7 @@
 package com.net.impl;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
@@ -20,18 +21,15 @@ public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
 
     }
 
-    public DefaultMessageReader(int corePoolSize, int maximiumPoolSize,
-	    int keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
-	this.executor = new ThreadPoolExecutor(corePoolSize, maximiumPoolSize,
-		keepAliveTime, unit, workQueue);
+    public DefaultMessageReader(int corePoolSize, int maximiumPoolSize, int keepAliveTime,
+	    TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+	this.executor = new ThreadPoolExecutor(corePoolSize, maximiumPoolSize, keepAliveTime, unit,
+		workQueue);
     }
 
     public void destory() {
 	if (this.executor == this.connector.getExecutor())
 	    this.executor = null;
-
-	this.connector = null;
-
     }
 
     public void init(Connector<R, W> connector) {
@@ -48,14 +46,18 @@ public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
 		R request = (R) task.attachment();
 		try {
 		    notifier.fireOnRead(request);
+		    connector.processWrite(task);
+		} catch (ClosedChannelException e) {
+		    // 主动关闭的忽略
 		} catch (IOException e) {
+		    notifier.fireOnError(e);
 		    try {
 			task.channel().close();
 		    } catch (IOException e1) {
 		    }
+		    notifier.fireOnClosed(request);
 		} catch (Exception e) {
 		    notifier.fireOnError(e);
-		} finally {
 		    connector.processWrite(task);
 		}
 	    }
