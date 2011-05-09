@@ -15,7 +15,7 @@ import com.net.util.POJO;
  */
 public class ContextImpl extends POJO implements Remote, Context {
     private static final long serialVersionUID = -2520602227624923821L;
-
+    
     private Map<String, Object> context = new HashMap<String, Object>(1);
 
     public Object getAttribute(String name) {

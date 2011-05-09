@@ -16,15 +16,15 @@ public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
     private Connector<R, W> connector;
     private Notifier<R, W> notifier;
     private Executor executor;
-
+    
     public DefaultMessageReader() {
 
     }
 
-    public DefaultMessageReader(int corePoolSize, int maximiumPoolSize, int keepAliveTime,
-	    TimeUnit unit, BlockingQueue<Runnable> workQueue) {
-	this.executor = new ThreadPoolExecutor(corePoolSize, maximiumPoolSize, keepAliveTime, unit,
-		workQueue);
+    public DefaultMessageReader(int corePoolSize, int maximiumPoolSize,
+	    int keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+	this.executor = new ThreadPoolExecutor(corePoolSize, maximiumPoolSize,
+		keepAliveTime, unit, workQueue);
     }
 
     public void destory() {

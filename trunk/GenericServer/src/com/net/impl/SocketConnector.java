@@ -27,7 +27,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
     private ExecutorService executer;
 
     protected Selector selector;
-
+    
     private MessageReader<R, W> reader;
     private MessageWriter<R, W> writer;
 
@@ -71,15 +71,17 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
     public SocketConnector(ExecutorService executer,
 	    RequestFactory<R> requestFactory, ResponseFactory<W> responseFactory)
 	    throws IOException {
-	this(executer, new DefaultNotifier<R, W>(), new DefaultMessageReader<R, W>(),
-		new DefaultMessageWriter<R, W>(), requestFactory, responseFactory);
+	this(executer, new DefaultNotifier<R, W>(),
+		new DefaultMessageReader<R, W>(),
+		new DefaultMessageWriter<R, W>(), requestFactory,
+		responseFactory);
     }
 
-    public SocketConnector(RequestFactory<R> requestFactory, ResponseFactory<W> responseFactory)
-	    throws IOException {
-	this(
-		new ThreadPoolExecutor(20, 256, 1, TimeUnit.HOURS,
-			new LinkedBlockingQueue<Runnable>()), requestFactory, responseFactory);
+    public SocketConnector(RequestFactory<R> requestFactory,
+	    ResponseFactory<W> responseFactory) throws IOException {
+	this(new ThreadPoolExecutor(20, 256, 1, TimeUnit.HOURS,
+		new LinkedBlockingQueue<Runnable>()), requestFactory,
+		responseFactory);
     }
 
     public void run() {
@@ -155,7 +157,8 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
 	while (this.sspPool.isEmpty() == false)
 	    try {
-		this.addRegistor(this.sspPool.poll(), SelectionKey.OP_ACCEPT, null);
+		this.addRegistor(this.sspPool.poll(), SelectionKey.OP_ACCEPT,
+			null);
 	    } catch (Exception e) {
 		this.notifier.fireOnError(e);
 	    }

@@ -2,17 +2,17 @@ package com.net;
 
 public interface Context {
 
-	Object setAttribute(String name, Object value);
+    Object setAttribute(String name, Object value);
 
-	Object getAttribute(String name);
+    Object getAttribute(String name);
 
-	Object removeAttribute(String name);
+    Object removeAttribute(String name);
 
-	boolean contains(String name);
+    boolean contains(String name);
 
-	String[] getAttributeNames();
+    String[] getAttributeNames();
 
-	Object[] getAttributeValues();
+    Object[] getAttributeValues();
 
-	void clear();
+    void clear();
 }

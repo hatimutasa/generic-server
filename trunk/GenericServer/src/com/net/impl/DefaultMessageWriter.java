@@ -24,10 +24,10 @@ public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
 
     }
 
-    public DefaultMessageWriter(int corePoolSize, int maximiumPoolSize, int keepAliveTime,
-	    TimeUnit unit, BlockingQueue<Runnable> workQueue) {
-	this.executor = new ThreadPoolExecutor(corePoolSize, maximiumPoolSize, keepAliveTime, unit,
-		workQueue);
+    public DefaultMessageWriter(int corePoolSize, int maximiumPoolSize,
+	    int keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+	this.executor = new ThreadPoolExecutor(corePoolSize, maximiumPoolSize,
+		keepAliveTime, unit, workQueue);
     }
 
     public void destory() {
