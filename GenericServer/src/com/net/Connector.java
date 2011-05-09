@@ -5,21 +5,21 @@ import java.util.concurrent.Executor;
 
 public interface Connector<R, W> {
 
-	void start();
+    void start();
 
-	void stop();
+    void stop();
 
-	Notifier<R, W> getNotifier();
+    Notifier<R, W> getNotifier();
 
-	void processRead(SelectionKey key);
+    void processRead(SelectionKey key);
 
-	void processWrite(SelectionKey key);
+    void processWrite(SelectionKey key);
 
-	boolean isRuning();
+    boolean isRuning();
 
-	RequestFactory<R> getRequestFactory();
+    RequestFactory<R> getRequestFactory();
 
-	ResponseFactory<W> getResponseFactory();
+    ResponseFactory<W> getResponseFactory();
 
-	Executor getExecutor();
+    Executor getExecutor();
 }

@@ -13,7 +13,7 @@ public final class ThreadContext {
     public static final boolean contains(String name) {
 	return getContext().containsKey(name);
     }
-
+    
     public static final Object getAttribute(String name) {
 	return getContext().get(name);
     }

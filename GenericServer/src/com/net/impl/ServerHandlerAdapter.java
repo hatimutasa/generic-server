@@ -3,7 +3,7 @@ package com.net.impl;
 import com.net.ServerHandler;
 
 public class ServerHandlerAdapter<R, W> implements ServerHandler<R, W> {
-
+    
     public void onAccept() throws Exception {
     }
 
