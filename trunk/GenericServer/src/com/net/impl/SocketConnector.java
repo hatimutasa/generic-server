@@ -68,8 +68,9 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
     }
 
-    public SocketConnector(ExecutorService executer, RequestFactory<R> requestFactory,
-	    ResponseFactory<W> responseFactory) throws IOException {
+    public SocketConnector(ExecutorService executer,
+	    RequestFactory<R> requestFactory, ResponseFactory<W> responseFactory)
+	    throws IOException {
 	this(executer, new DefaultNotifier<R, W>(), new DefaultMessageReader<R, W>(),
 		new DefaultMessageWriter<R, W>(), requestFactory, responseFactory);
     }
@@ -123,12 +124,10 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	    notifier.fireOnError(e);
 	} finally {
 	    thread = null;
-	    destory();
 	}
     }
 
     protected void destory() {
-	this.executer.shutdown();
 	reader.destory();
 	writer.destory();
     }
@@ -227,6 +226,13 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	} catch (InterruptedException e) {
 	    e.printStackTrace();
 	}
+	try {
+	    this.executer.shutdown();
+	    this.executer.awaitTermination(30L, TimeUnit.SECONDS);
+	} catch (InterruptedException e) {
+	    e.printStackTrace();
+	}
+	destory();
     }
 
     public Notifier<R, W> getNotifier() {
