@@ -1,10 +1,10 @@
 package com.net.impl;
 
-import java.rmi.Remote;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.net.Context;
+import com.net.Remote;
 import com.net.util.POJO;
 
 /**
