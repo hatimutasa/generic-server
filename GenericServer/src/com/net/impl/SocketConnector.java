@@ -79,7 +79,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
     public SocketConnector(RequestFactory<R> requestFactory,
 	    ResponseFactory<W> responseFactory) throws IOException {
-	this(new ThreadPoolExecutor(20, 256, 1, TimeUnit.HOURS,
+	this(new ThreadPoolExecutor(20, 256, 60, TimeUnit.SECONDS,
 		new LinkedBlockingQueue<Runnable>()), requestFactory,
 		responseFactory);
     }
