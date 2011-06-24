@@ -3,6 +3,13 @@ package com.net;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Executor;
 
+/**
+ * 连接器
+ * @author slmy
+ *
+ * @param <R> 请求类型
+ * @param <W> 响应类型
+ */
 public interface Connector<R, W> {
 
     void start();
