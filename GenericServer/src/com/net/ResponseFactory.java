@@ -5,6 +5,6 @@ import java.nio.channels.SelectionKey;
 
 public interface ResponseFactory<W> {
 
-    W create(SelectionKey key) throws IOException;
+	W create(SelectionKey key) throws IOException;
 
 }

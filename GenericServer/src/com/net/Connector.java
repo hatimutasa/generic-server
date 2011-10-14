@@ -5,28 +5,31 @@ import java.util.concurrent.Executor;
 
 /**
  * 连接器
+ * 
  * @author slmy
- *
- * @param <R> 请求类型
- * @param <W> 响应类型
+ * 
+ * @param <R>
+ *            请求类型
+ * @param <W>
+ *            响应类型
  */
 public interface Connector<R, W> {
 
-    void start();
+	void start();
 
-    void stop();
+	void stop();
 
-    Notifier<R, W> getNotifier();
+	Notifier<R, W> getNotifier();
 
-    void processRead(SelectionKey key);
+	void processRead(SelectionKey key);
 
-    void processWrite(SelectionKey key);
+	void processWrite(SelectionKey key);
 
-    boolean isRuning();
+	boolean isRuning();
 
-    RequestFactory<R> getRequestFactory();
+	RequestFactory<R> getRequestFactory();
 
-    ResponseFactory<W> getResponseFactory();
+	ResponseFactory<W> getResponseFactory();
 
-    Executor getExecutor();
+	Executor getExecutor();
 }
