@@ -6,9 +6,9 @@ public interface ServerHandler<R, W> {
 
 	void onError(Exception e);
 
-	void onRead(R request) throws Exception;
+	boolean onRead(R request) throws Exception;
 
-	void onWrite(R request, W response) throws Exception;
+	boolean onWrite(R request, W response) throws Exception;
 
 	void onAccepted(R request) throws Exception;
 

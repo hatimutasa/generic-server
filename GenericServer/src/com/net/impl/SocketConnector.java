@@ -32,17 +32,18 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	private MessageReader<R, W> reader;
 	private MessageWriter<R, W> writer;
 
-	private BlockingQueue<SelectionKey> rpPool;
-	private BlockingQueue<SelectionKey> wpPool;
+	private BlockingQueue<SelectionKey> queue4read;// 读
+	private BlockingQueue<SelectionKey> queue4write;// 写
 
-	private BlockingQueue<ServerSocketChannel> sspPool;
-	private BlockingQueue<SocketChannel> spPool;
-	private BlockingQueue<Object[]> apPool;
+	private BlockingQueue<ServerSocketChannel> queue4server;// 服务端
+	private BlockingQueue<SocketChannel> queue4client;// 客户端
+	private BlockingQueue<Object[]> queue4medley;// 混合请求
 
 	private RequestFactory<R> requestFactory;
 	private ResponseFactory<W> responseFactory;
 
 	protected Notifier<R, W> notifier;
+	private String name = "SelectorHandler-" + nextId();
 
 	public SocketConnector(ExecutorService executer, Notifier<R, W> notifer,
 			MessageReader<R, W> reader, MessageWriter<R, W> writer,
@@ -55,18 +56,27 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		this.reader = reader;
 		this.writer = writer;
 
-		this.rpPool = new LinkedBlockingQueue<SelectionKey>();
-		this.wpPool = new LinkedBlockingQueue<SelectionKey>();
+		this.queue4read = new LinkedBlockingQueue<SelectionKey>();
+		this.queue4write = new LinkedBlockingQueue<SelectionKey>();
 
-		this.sspPool = new LinkedBlockingQueue<ServerSocketChannel>();
-		this.spPool = new LinkedBlockingQueue<SocketChannel>();
-		this.apPool = new LinkedBlockingQueue<Object[]>();
+		this.queue4server = new LinkedBlockingQueue<ServerSocketChannel>();
+		this.queue4client = new LinkedBlockingQueue<SocketChannel>();
+		this.queue4medley = new LinkedBlockingQueue<Object[]>();
 
 		this.requestFactory = requestFactory;
 		this.responseFactory = responseFactory;
 
 		this.notifier = notifer;
 
+	}
+
+	private static int nextId = 0;
+
+	private static int nextId() {
+		if (nextId < 0) {
+			nextId = 0;
+		}
+		return nextId++;
 	}
 
 	public SocketConnector(ExecutorService executer,
@@ -121,10 +131,11 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 							} else if (key.isAcceptable()) {
 								notifier.fireOnAccept();
 								ss = ((ServerSocketChannel) key.channel());
-								accept(ss.accept());
+								accept4server(ss.accept());
 							}
-						} else
+						} else {
 							notifier.fireOnClosed((R) key.attachment());
+						}
 					} catch (Exception e) {
 						notifier.fireOnError(e);
 					}
@@ -146,58 +157,62 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		writer.init(this);
 	}
 
-	protected void accept(SocketChannel sc) throws Exception {
-		R request = requestFactory.create(sc);
+	protected void accept(SelectableChannel sc, R request) throws Exception {
 		addRegistor(sc, SelectionKey.OP_READ, request);
 		notifier.fireOnAccepted(request);
 	}
 
-	protected void accept(SocketChannel sc, R request) throws Exception {
-		addRegistor(sc, SelectionKey.OP_READ, request);
-		notifier.fireOnAccepted(request);
+	protected void accept4server(SocketChannel sc) throws Exception {
+		accept(sc, requestFactory.create(sc));
 	}
 
 	@SuppressWarnings("unchecked")
 	protected void addRegistor() {
-		addRegistors(wpPool, SelectionKey.OP_WRITE);
-		addRegistors(rpPool, SelectionKey.OP_READ);
+		// 添加读写请求注册器
+		addRegistors(queue4write, SelectionKey.OP_WRITE);
+		addRegistors(queue4read, SelectionKey.OP_READ);
 
-		while (this.sspPool.isEmpty() == false)
+		// 添加混合请求注册器
+		while (queue4medley.isEmpty() == false)
 			try {
-				this.addRegistor(this.sspPool.poll(), SelectionKey.OP_ACCEPT,
-						null);
+				Object[] aq = queue4medley.poll();
+				accept((SelectableChannel) aq[0], (R) aq[1]);
 			} catch (Exception e) {
-				this.notifier.fireOnError(e);
+				notifier.fireOnError(e);
 			}
-		while (this.spPool.isEmpty() == false)
+
+		// 添加套接字请求注册器
+		while (queue4client.isEmpty() == false)
 			try {
-				this.accept(this.spPool.poll());
+				accept4server(queue4client.poll());
 			} catch (Exception e) {
-				this.notifier.fireOnError(e);
+				notifier.fireOnError(e);
 			}
-		while (this.apPool.isEmpty() == false)
+
+		// 添加服务器请求注册器
+		while (queue4server.isEmpty() == false)
 			try {
-				Object[] aq = this.apPool.poll();
-				this.accept((SocketChannel) aq[0], (R) aq[1]);
+				addRegistor(queue4server.poll(), SelectionKey.OP_ACCEPT, null);
 			} catch (Exception e) {
-				this.notifier.fireOnError(e);
+				notifier.fireOnError(e);
 			}
 	}
 
 	@SuppressWarnings("unchecked")
 	private void addRegistors(Queue<SelectionKey> queue, int ops) {
-		SelectionKey key = null;
-		R request = null;
-		while ((key = queue.poll()) != null)
+		SelectionKey key;
+		while ((key = queue.poll()) != null) {
+			R request = null;
 			try {
 				request = (R) key.attachment();
 				addRegistor(key.channel(), ops, request);
 			} catch (Exception e) {
 				notifier.fireOnClosed(request);
 			}
+		}
 	}
 
-	protected SelectionKey addRegistor(SelectableChannel channel, int ops, R req)
+	private SelectionKey addRegistor(SelectableChannel channel, int ops, R req)
 			throws IOException {
 		if (channel != null) {
 			channel.configureBlocking(false);
@@ -210,14 +225,15 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		if (thread != null)
 			return;
 
-		if (this.notifier.isEmpty())
+		if (notifier.isEmpty())
 			throw new AccessException("没有注册任何处理器。");
 
 		synchronized (this) {
-			thread = new Thread(this);
-			thread.start();
 			try {
-				this.wait();
+				thread = new Thread(this, name);
+				thread.setDaemon(true);
+				thread.start();
+				wait();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -237,8 +253,8 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 			e.printStackTrace();
 		}
 		try {
-			this.executer.shutdown();
-			this.executer.awaitTermination(30L, TimeUnit.SECONDS);
+			executer.shutdown();
+			executer.awaitTermination(30L, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -246,41 +262,41 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	}
 
 	public Notifier<R, W> getNotifier() {
-		return this.notifier;
+		return notifier;
 	}
 
 	public void processRead(SelectionKey key) {
 		try {
-			this.rpPool.put(key);
-			this.selector.wakeup();
+			queue4read.put(key);
+			selector.wakeup();
 		} catch (InterruptedException e) {
-			this.notifier.fireOnError(e);
+			notifier.fireOnError(e);
 		}
 	}
 
 	public void processWrite(SelectionKey key) {
 		try {
-			this.wpPool.put(key);
-			this.selector.wakeup();
+			queue4write.put(key);
+			selector.wakeup();
 		} catch (InterruptedException e) {
-			this.notifier.fireOnError(e);
+			notifier.fireOnError(e);
 		}
 	}
 
-	public void registor(SocketChannel sc, R request) throws Exception {
+	public void registor(SelectableChannel sc, R request) throws Exception {
 		try {
-			this.apPool.put(new Object[] { sc, request });
-			this.selector.wakeup();
+			queue4medley.put(new Object[] { sc, request });
+			selector.wakeup();
 		} catch (InterruptedException e) {
-			this.notifier.fireOnError(e);
+			notifier.fireOnError(e);
 		}
 	}
 
 	public void registor(ServerSocketChannel... sscs) throws IOException {
 		try {
 			for (ServerSocketChannel ssc : sscs)
-				this.sspPool.put(ssc);
-			this.selector.wakeup();
+				queue4server.put(ssc);
+			selector.wakeup();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -289,19 +305,19 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	public void registor(SocketChannel... scs) throws IOException {
 		try {
 			for (SocketChannel sc : scs)
-				this.spPool.put(sc);
-			this.selector.wakeup();
+				queue4client.put(sc);
+			selector.wakeup();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
 
 	public boolean isRuning() {
-		return this.thread != null;
+		return thread != null;
 	}
 
 	public ResponseFactory<W> getResponseFactory() {
-		return this.responseFactory;
+		return responseFactory;
 	}
 
 	public RequestFactory<R> getRequestFactory() {
@@ -309,10 +325,10 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	}
 
 	public Selector getSelector() {
-		return this.selector;
+		return selector;
 	}
 
 	public Executor getExecutor() {
-		return this.executer;
+		return executer;
 	}
 }

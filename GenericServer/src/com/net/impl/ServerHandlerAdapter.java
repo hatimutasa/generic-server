@@ -17,10 +17,12 @@ public class ServerHandlerAdapter<R, W> implements ServerHandler<R, W> {
 		e.printStackTrace();
 	}
 
-	public void onRead(R request) throws Exception {
+	public boolean onRead(R request) throws Exception {
+		return false;
 	}
 
-	public void onWrite(R request, W response) throws Exception {
+	public boolean onWrite(R request, W response) throws Exception {
+		return false;
 	}
 
 }
