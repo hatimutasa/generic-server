@@ -5,6 +5,6 @@ import java.nio.channels.SocketChannel;
 
 public interface RequestFactory<R> {
 
-    R create(SocketChannel sc) throws IOException;
+	R create(SocketChannel sc) throws IOException;
 
 }

@@ -1,6 +1,5 @@
 package com.net.msg;
 
-
 public interface BytesMessage extends Message {
 
 	long getBodyLength();
