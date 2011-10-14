@@ -10,9 +10,9 @@ public interface Notifier<R, W> {
 
 	void fireOnAccepted(R request) throws Exception;
 
-	void fireOnRead(R request) throws Exception;
+	boolean fireOnRead(R request) throws Exception;
 
-	void fireOnWrite(R request, W response) throws Exception;
+	boolean fireOnWrite(R request, W response) throws Exception;
 
 	void fireOnClosed(R request);
 

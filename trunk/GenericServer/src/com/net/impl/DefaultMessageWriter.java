@@ -1,6 +1,5 @@
 package com.net.impl;
 
-import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.BlockingQueue;
@@ -18,10 +17,9 @@ public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
 	private Notifier<R, W> notifier;
 	private Executor executor;
 
-	private ResponseFactory<W> respFactory;
+	private ResponseFactory<W> responseFactory;
 
 	public DefaultMessageWriter() {
-
 	}
 
 	public DefaultMessageWriter(int corePoolSize, int maximiumPoolSize,
@@ -36,41 +34,57 @@ public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
 
 		this.connector = null;
 		this.notifier = null;
-		this.respFactory = null;
+		this.responseFactory = null;
 	}
 
 	public void init(Connector<R, W> connector) {
 		this.connector = connector;
 		this.notifier = connector.getNotifier();
-		this.respFactory = connector.getResponseFactory();
+		this.responseFactory = connector.getResponseFactory();
 
 		if (this.executor == null)
 			this.executor = connector.getExecutor();
 	}
 
-	@SuppressWarnings("unchecked")
-	public void processRequest(final SelectionKey task) {
-		this.executor.execute(new Runnable() {
+	public void processRequest(SelectionKey key) {
+		executor.execute(createTask(key));
+	}
+
+	protected Runnable createTask(final SelectionKey key) {
+		return new Runnable() {
 			public void run() {
-				R request = (R) task.attachment();
-				try {
-					W response = respFactory.create(task);
-					notifier.fireOnWrite(request, response);
-					connector.processRead(task);
-				} catch (ClosedChannelException e) {
-					// 主动关闭的忽略
-				} catch (IOException e) {
-					notifier.fireOnError(e);
-					try {
-						task.channel().close();
-					} catch (IOException e1) {
-					}
-					notifier.fireOnClosed(request);
-				} catch (Exception e) {
-					notifier.fireOnError(e);
-					connector.processRead(task);
-				}
+				execute(key);
 			}
-		});
+		};
+	}
+
+	@SuppressWarnings("unchecked")
+	protected void execute(SelectionKey key) {
+		R request = (R) key.attachment();
+		try {
+			if (notifier.fireOnWrite(request, responseFactory.create(key))) {
+				connector.processRead(key);// 报文完整写出，请求读取
+			} else {
+				connector.processWrite(key);// 报文未写完，继续请求写
+			}
+		} catch (ClosedChannelException e) {
+			notifier.fireOnClosed(request);
+		} catch (Exception e) {
+			try {
+				notifier.fireOnError(e);
+				key.channel().close();
+			} catch (Exception e1) {
+			} finally {
+				notifier.fireOnClosed(request);
+			}
+		}
+	}
+
+	public void setExecutor(Executor executor) {
+		this.executor = executor;
+	}
+
+	public Executor getExecutor() {
+		return executor;
 	}
 }

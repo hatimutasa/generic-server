@@ -1,6 +1,5 @@
 package com.net.impl;
 
-import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.BlockingQueue;
@@ -18,7 +17,6 @@ public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
 	private Executor executor;
 
 	public DefaultMessageReader() {
-
 	}
 
 	public DefaultMessageReader(int corePoolSize, int maximiumPoolSize,
@@ -39,29 +37,45 @@ public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
 			this.executor = connector.getExecutor();
 	}
 
-	@SuppressWarnings("unchecked")
-	public void processRequest(final SelectionKey task) {
-		this.executor.execute(new Runnable() {
-			public void run() {
-				R request = (R) task.attachment();
-				try {
-					notifier.fireOnRead(request);
-					connector.processWrite(task);
-				} catch (ClosedChannelException e) {
-					// 主动关闭的忽略
-				} catch (IOException e) {
-					notifier.fireOnError(e);
-					try {
-						task.channel().close();
-					} catch (IOException e1) {
-					}
-					notifier.fireOnClosed(request);
-				} catch (Exception e) {
-					notifier.fireOnError(e);
-					connector.processWrite(task);
-				}
-			}
-		});
+	public void processRequest(SelectionKey key) {
+		this.executor.execute(createTask(key));
 	}
 
+	protected Runnable createTask(final SelectionKey key) {
+		return new Runnable() {
+			public void run() {
+				execute(key);
+			}
+		};
+	}
+
+	@SuppressWarnings("unchecked")
+	protected void execute(SelectionKey key) {
+		R request = (R) key.attachment();
+		try {
+			if (notifier.fireOnRead(request)) {
+				connector.processWrite(key);// 读到完整报文，请求写
+			} else {
+				connector.processRead(key);// 不完整报文，继续读取
+			}
+		} catch (ClosedChannelException e) {
+			notifier.fireOnClosed(request);
+		} catch (Exception e) {
+			try {
+				notifier.fireOnError(e);
+				key.channel().close();
+			} catch (Exception e1) {
+			} finally {
+				notifier.fireOnClosed(request);
+			}
+		}
+	}
+
+	public void setExecutor(Executor executor) {
+		this.executor = executor;
+	}
+
+	public Executor getExecutor() {
+		return executor;
+	}
 }

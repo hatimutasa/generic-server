@@ -41,16 +41,20 @@ public class DefaultNotifier<R, W> implements Notifier<R, W> {
 			listeners.get(i).onError(e);
 	}
 
-	public void fireOnRead(R request) throws Exception {
+	public boolean fireOnRead(R request) throws Exception {
+		boolean suc = false;
 		int length = listeners.size();
 		for (int i = 0; i < length; i++)
-			listeners.get(i).onRead(request);
+			suc = listeners.get(i).onRead(request);
+		return suc;
 	}
 
-	public void fireOnWrite(R request, W response) throws Exception {
+	public boolean fireOnWrite(R request, W response) throws Exception {
+		boolean suc = false;
 		int length = listeners.size();
 		for (int i = 0; i < length; i++)
-			listeners.get(i).onWrite(request, response);
+			suc = listeners.get(i).onWrite(request, response);
+		return suc;
 	}
 
 	public void addHandler(ServerHandler<R, W> listener) {
