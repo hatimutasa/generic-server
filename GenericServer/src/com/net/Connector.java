@@ -6,7 +6,7 @@ import java.util.concurrent.Executor;
 /**
  * 连接器
  * 
- * @author slmy
+ * @author yiyongpeng
  * 
  * @param <R>
  *            请求类型
