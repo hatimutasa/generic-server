@@ -53,11 +53,10 @@ public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
 	protected void execute(SelectionKey key) {
 		R request = (R) key.attachment();
 		try {
-			if (notifier.fireOnRead(request)) {
+			if (notifier.fireOnRead(request))
 				connector.processWrite(key);// 读到完整报文，请求写
-			} else {
+			else
 				connector.processRead(key);// 不完整报文，继续读取
-			}
 		} catch (ClosedChannelException e) {
 			notifier.fireOnClosed(request);
 		} catch (Exception e) {
