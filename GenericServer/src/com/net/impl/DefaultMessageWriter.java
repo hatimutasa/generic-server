@@ -62,11 +62,10 @@ public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
 	protected void execute(SelectionKey key) {
 		R request = (R) key.attachment();
 		try {
-			if (notifier.fireOnWrite(request, responseFactory.create(key))) {
+			if (notifier.fireOnWrite(request, responseFactory.create(key)))
 				connector.processRead(key);// 报文完整写出，请求读取
-			} else {
+			else
 				connector.processWrite(key);// 报文未写完，继续请求写
-			}
 		} catch (ClosedChannelException e) {
 			notifier.fireOnClosed(request);
 		} catch (Exception e) {
