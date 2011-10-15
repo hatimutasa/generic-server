@@ -2,7 +2,9 @@ package com.net.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public final class ThreadContext {
 	public static final String SCOPE_SESSION = "__SESSION__";
@@ -45,18 +47,26 @@ public final class ThreadContext {
 	}
 
 	public static final void init() {
-		Thread current = Thread.currentThread();
-		if (context.containsKey(current) == false)
-			context.put(current, new HashMap<Object, Object>());
+		context.put(Thread.currentThread(), createContext());
+	}
+
+	private static Map<Object, Object> createContext() {
+		Map<Object, Object> map = recycle.poll();
+		if (map == null)
+			map = new HashMap<Object, Object>();
+		return map;
 	}
 
 	public static final void destory() {
-		Thread current = Thread.currentThread();
-		if (context.containsKey(current))
-			context.remove(current).clear();
+		Map<Object, Object> map = context.remove(Thread.currentThread());
+		if (map != null) {
+			map.clear();
+			recycle.offer(map);
+		}
 	}
 
 	private static final Map<Thread, Map<Object, Object>> context = new ConcurrentHashMap<Thread, Map<Object, Object>>();
+	private static final BlockingDeque<Map<Object, Object>> recycle = new LinkedBlockingDeque<Map<Object, Object>>();
 
 	private static final long serialVersionUID = -487361707658106598L;
 }

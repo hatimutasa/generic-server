@@ -90,7 +90,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
 	public SocketConnector(RequestFactory<R> requestFactory,
 			ResponseFactory<W> responseFactory) throws IOException {
-		this(new ThreadPoolExecutor(20, 256, 60, TimeUnit.SECONDS,
+		this(new ThreadPoolExecutor(20, 50, 60, TimeUnit.SECONDS,
 				new LinkedBlockingQueue<Runnable>()), requestFactory,
 				responseFactory);
 	}
@@ -122,16 +122,16 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 						key = keys.next();
 						keys.remove();
 						if (key.isValid()) {
-							if (key.isReadable()) {
+							if (key.isAcceptable()) {
+								notifier.fireOnAccept();
+								ss = ((ServerSocketChannel) key.channel());
+								accept4server(ss.accept());
+							} else if (key.isReadable()) {
 								key.cancel();
 								reader.processRequest(key);
 							} else if (key.isWritable()) {
 								key.cancel();
 								writer.processRequest(key);
-							} else if (key.isAcceptable()) {
-								notifier.fireOnAccept();
-								ss = ((ServerSocketChannel) key.channel());
-								accept4server(ss.accept());
 							}
 						} else {
 							notifier.fireOnClosed((R) key.attachment());
