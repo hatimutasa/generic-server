@@ -8,10 +8,10 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -24,6 +24,7 @@ import com.net.RequestFactory;
 import com.net.ResponseFactory;
 
 public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
+	private static final int QUEUE_REQUEST_MAX = 1024;
 	private Thread thread;
 	private ExecutorService executer;
 
@@ -56,12 +57,16 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		this.reader = reader;
 		this.writer = writer;
 
-		this.queue4read = new LinkedBlockingQueue<SelectionKey>();
-		this.queue4write = new LinkedBlockingQueue<SelectionKey>();
+		this.queue4read = new ArrayBlockingQueue<SelectionKey>(
+				QUEUE_REQUEST_MAX);
+		this.queue4write = new ArrayBlockingQueue<SelectionKey>(
+				QUEUE_REQUEST_MAX);
 
-		this.queue4server = new LinkedBlockingQueue<ServerSocketChannel>();
-		this.queue4client = new LinkedBlockingQueue<SocketChannel>();
-		this.queue4medley = new LinkedBlockingQueue<Object[]>();
+		this.queue4server = new ArrayBlockingQueue<ServerSocketChannel>(
+				QUEUE_REQUEST_MAX);
+		this.queue4client = new ArrayBlockingQueue<SocketChannel>(
+				QUEUE_REQUEST_MAX);
+		this.queue4medley = new ArrayBlockingQueue<Object[]>(QUEUE_REQUEST_MAX);
 
 		this.requestFactory = requestFactory;
 		this.responseFactory = responseFactory;
@@ -91,8 +96,8 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	public SocketConnector(RequestFactory<R> requestFactory,
 			ResponseFactory<W> responseFactory) throws IOException {
 		this(new ThreadPoolExecutor(20, 50, 60, TimeUnit.SECONDS,
-				new LinkedBlockingQueue<Runnable>()), requestFactory,
-				responseFactory);
+				new ArrayBlockingQueue<Runnable>(QUEUE_REQUEST_MAX)),
+				requestFactory, responseFactory);
 	}
 
 	@SuppressWarnings("unchecked")
