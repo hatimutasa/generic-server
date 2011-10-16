@@ -2,6 +2,8 @@ package com.net.impl;
 
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -13,6 +15,7 @@ import com.net.Notifier;
 import com.net.ResponseFactory;
 
 public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
+	private static final int CACHE_TASK_MAX = 50;
 	private Connector<R, W> connector;
 	private Notifier<R, W> notifier;
 	private Executor executor;
@@ -50,13 +53,29 @@ public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
 		executor.execute(createTask(key));
 	}
 
-	protected Runnable createTask(final SelectionKey key) {
-		return new Runnable() {
-			public void run() {
-				execute(key);
-			}
-		};
+	protected Runnable createTask(SelectionKey key) {
+		Task task = recycle.poll();
+		if (task == null)
+			task = new Task();
+		task.key = key;
+		return task;
 	}
+
+	private class Task implements Runnable {
+		private SelectionKey key;
+
+		public void run() {
+			execute(key);
+			destory();
+		}
+
+		void destory() {
+			key = null;
+			recycle.offer(this);
+		}
+	}
+
+	private Queue<Task> recycle = new ArrayBlockingQueue<Task>(CACHE_TASK_MAX);
 
 	@SuppressWarnings("unchecked")
 	protected void execute(SelectionKey key) {
