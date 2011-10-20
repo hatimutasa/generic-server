@@ -95,9 +95,9 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
 	public SocketConnector(RequestFactory<R> requestFactory,
 			ResponseFactory<W> responseFactory) throws IOException {
-		this(new ThreadPoolExecutor(20, 50, 60, TimeUnit.SECONDS,
-				new ArrayBlockingQueue<Runnable>(QUEUE_REQUEST_MAX)),
-				requestFactory, responseFactory);
+		this(new ThreadPoolExecutor(20, QUEUE_REQUEST_MAX, 60,
+				TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(
+						QUEUE_REQUEST_MAX)), requestFactory, responseFactory);
 	}
 
 	@SuppressWarnings("unchecked")
