@@ -52,7 +52,6 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 			throws IOException {
 
 		this.executer = executer;
-		this.selector = Selector.open();
 
 		this.reader = reader;
 		this.writer = writer;
@@ -235,11 +234,12 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
 		synchronized (this) {
 			try {
+				selector = Selector.open();
 				thread = new Thread(this, name);
 				thread.setDaemon(true);
 				thread.start();
 				wait();
-			} catch (InterruptedException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -262,6 +262,13 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 			executer.awaitTermination(30L, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		}
+		try {
+			selector.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			selector = null;
 		}
 		destory();
 	}
@@ -327,10 +334,6 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
 	public RequestFactory<R> getRequestFactory() {
 		return requestFactory;
-	}
-
-	public Selector getSelector() {
-		return selector;
 	}
 
 	public Executor getExecutor() {
