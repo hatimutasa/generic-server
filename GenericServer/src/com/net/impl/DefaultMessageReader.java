@@ -24,20 +24,20 @@ public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
 
 	public DefaultMessageReader(int corePoolSize, int maximiumPoolSize,
 			int keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
-		this.executor = new ThreadPoolExecutor(corePoolSize, maximiumPoolSize,
+		executor = new ThreadPoolExecutor(corePoolSize, maximiumPoolSize,
 				keepAliveTime, unit, workQueue);
 	}
 
 	public void destory() {
-		if (this.executor == this.connector.getExecutor())
-			this.executor = null;
+		if (executor == connector.getExecutor())
+			executor = null;
 	}
 
 	public void init(Connector<R, W> connector) {
 		this.connector = connector;
-		this.notifier = connector.getNotifier();
-		if (this.executor == null)
-			this.executor = connector.getExecutor();
+		notifier = connector.getNotifier();
+		if (executor == null)
+			executor = connector.getExecutor();
 	}
 
 	public void processRequest(SelectionKey key) {
