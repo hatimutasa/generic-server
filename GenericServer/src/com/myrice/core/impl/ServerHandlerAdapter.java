@@ -1,4 +1,4 @@
-package com.net.impl;
+package com.myrice.core.impl;
 
 import com.myrice.core.ServerHandler;
 

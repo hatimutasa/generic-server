@@ -1,11 +1,11 @@
-package com.net.impl;
+package com.myrice.core.impl;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import com.myrice.core.Context;
 import com.myrice.core.Remote;
-import com.net.util.POJO;
+import com.myrice.core.util.POJO;
 
 /**
  * иообнд

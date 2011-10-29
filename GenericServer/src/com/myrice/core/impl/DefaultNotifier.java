@@ -1,4 +1,4 @@
-package com.net.impl;
+package com.myrice.core.impl;
 
 import java.util.LinkedList;
 import java.util.List;
