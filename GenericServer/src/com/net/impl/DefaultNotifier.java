@@ -3,8 +3,8 @@ package com.net.impl;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.net.Notifier;
-import com.net.ServerHandler;
+import com.myrice.core.Notifier;
+import com.myrice.core.ServerHandler;
 
 public class DefaultNotifier<R, W> implements Notifier<R, W> {
 	private List<ServerHandler<R, W>> listeners;

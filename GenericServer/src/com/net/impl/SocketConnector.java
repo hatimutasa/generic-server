@@ -15,13 +15,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import com.net.AccessException;
-import com.net.Connector;
-import com.net.MessageReader;
-import com.net.MessageWriter;
-import com.net.Notifier;
-import com.net.RequestFactory;
-import com.net.ResponseFactory;
+import com.myrice.core.AccessException;
+import com.myrice.core.Connector;
+import com.myrice.core.MessageReader;
+import com.myrice.core.MessageWriter;
+import com.myrice.core.Notifier;
+import com.myrice.core.RequestFactory;
+import com.myrice.core.ResponseFactory;
 
 public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	private static final int QUEUE_REQUEST_MAX = 1024;

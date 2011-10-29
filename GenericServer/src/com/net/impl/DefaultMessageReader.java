@@ -9,9 +9,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import com.net.Connector;
-import com.net.MessageReader;
-import com.net.Notifier;
+import com.myrice.core.Connector;
+import com.myrice.core.MessageReader;
+import com.myrice.core.Notifier;
 
 public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
 	private static final int CACHE_TASK_MAX = 50;

@@ -1,8 +1,8 @@
-package com.net;
+package com.myrice.core;
 
 import java.nio.channels.SelectionKey;
 
-public interface MessageReader<R, W> {
+public interface MessageWriter<R, W> {
 
 	void processRequest(SelectionKey key);
 

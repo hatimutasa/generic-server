@@ -1,4 +1,4 @@
-package com.net;
+package com.myrice.core;
 
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.Executor;
