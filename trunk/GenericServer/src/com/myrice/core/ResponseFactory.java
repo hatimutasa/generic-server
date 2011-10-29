@@ -1,4 +1,4 @@
-package com.net;
+package com.myrice.core;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;

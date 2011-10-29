@@ -1,4 +1,4 @@
-package com.net;
+package com.myrice.core;
 
 public interface Context {
 

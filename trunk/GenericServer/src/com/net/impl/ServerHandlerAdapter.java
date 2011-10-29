@@ -1,6 +1,6 @@
 package com.net.impl;
 
-import com.net.ServerHandler;
+import com.myrice.core.ServerHandler;
 
 public class ServerHandlerAdapter<R, W> implements ServerHandler<R, W> {
 

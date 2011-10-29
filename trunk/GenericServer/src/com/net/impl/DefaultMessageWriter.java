@@ -9,10 +9,10 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import com.net.Connector;
-import com.net.MessageWriter;
-import com.net.Notifier;
-import com.net.ResponseFactory;
+import com.myrice.core.Connector;
+import com.myrice.core.MessageWriter;
+import com.myrice.core.Notifier;
+import com.myrice.core.ResponseFactory;
 
 public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
 	private static final int CACHE_TASK_MAX = 50;

@@ -1,4 +1,4 @@
-package com.net;
+package com.myrice.core;
 
 /**
  * 运行时访问异常

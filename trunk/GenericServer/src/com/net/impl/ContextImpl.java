@@ -3,9 +3,9 @@ package com.net.impl;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.net.Context;
+import com.myrice.core.Context;
+import com.myrice.core.Remote;
 import com.net.util.POJO;
-import com.net.Remote;
 
 /**
  * иообнд
