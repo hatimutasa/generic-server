@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.myrice.core.Context;
 import com.myrice.core.Remote;
-import com.myrice.core.util.POJO;
+import com.myrice.util.POJO;
 
 /**
  * иообнд
