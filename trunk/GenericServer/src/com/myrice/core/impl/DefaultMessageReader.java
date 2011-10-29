@@ -1,4 +1,4 @@
-package com.net.impl;
+package com.myrice.core.impl;
 
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;

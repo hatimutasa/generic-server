@@ -1,4 +1,4 @@
-package com.net.msg;
+package com.myrice.core.msg;
 
 public interface TextMessage extends Message {
 

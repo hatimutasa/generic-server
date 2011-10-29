@@ -1,4 +1,4 @@
-package com.net.util;
+package com.myrice.core.util;
 
 import java.util.HashMap;
 import java.util.Map;
