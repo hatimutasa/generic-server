@@ -24,7 +24,8 @@ import com.myrice.core.RequestFactory;
 import com.myrice.core.ResponseFactory;
 
 public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
-	private static final int QUEUE_REQUEST_MAX = 1024;
+	private static final int QUEUE_REQUEST_MAX = 2048;
+	private static final int THREAD_POOL_QUEUE_MAX = 10000;
 	private Thread thread;
 	private ExecutorService executer;
 
@@ -94,9 +95,9 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
 	public SocketConnector(RequestFactory<R> requestFactory,
 			ResponseFactory<W> responseFactory) throws IOException {
-		this(new ThreadPoolExecutor(20, QUEUE_REQUEST_MAX, 60,
+		this(new ThreadPoolExecutor(20, 72, 60,
 				TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(
-						QUEUE_REQUEST_MAX)), requestFactory, responseFactory);
+						THREAD_POOL_QUEUE_MAX)), requestFactory, responseFactory);
 	}
 
 	@SuppressWarnings("unchecked")
