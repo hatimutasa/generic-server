@@ -65,9 +65,11 @@ public final class ThreadContext {
 		}
 	}
 
+	private static final int RECYCLE_MAX = 1024;
+
 	private static final Map<Thread, Map<Object, Object>> context = new ConcurrentHashMap<Thread, Map<Object, Object>>();
 	private static final BlockingQueue<Map<Object, Object>> recycle = new ArrayBlockingQueue<Map<Object, Object>>(
-			1024);
+			RECYCLE_MAX);
 
 	private static final long serialVersionUID = -487361707658106598L;
 }
