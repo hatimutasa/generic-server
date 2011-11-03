@@ -7,9 +7,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ThreadContext {
+	public static final String SCOPE_APPLICATION = "__APPLICATION__";
 	public static final String SCOPE_SESSION = "__SESSION__";
 	public static final String SCOPE_REQUEST = "__REQUEST__";
-	public static final String SCOPE_APPLICATION = "__APPLICATION__";
 	public static final String SCOPE_RESPONSE = "__RESPONSE__";
 
 	public static final boolean contains(String name) {
