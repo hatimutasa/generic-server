@@ -95,9 +95,9 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
 	public SocketConnector(RequestFactory<R> requestFactory,
 			ResponseFactory<W> responseFactory) throws IOException {
-		this(new ThreadPoolExecutor(20, 72, 60,
-				TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(
-						THREAD_POOL_QUEUE_MAX)), requestFactory, responseFactory);
+		this(new ThreadPoolExecutor(20, 72, 60, TimeUnit.SECONDS,
+				new ArrayBlockingQueue<Runnable>(THREAD_POOL_QUEUE_MAX)),
+				requestFactory, responseFactory);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -139,6 +139,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 								writer.processRequest(key);
 							}
 						} else {
+							key.cancel();
 							notifier.fireOnClosed((R) key.attachment());
 						}
 					} catch (Exception e) {
