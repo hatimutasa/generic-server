@@ -297,7 +297,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		}
 	}
 
-	public void registor(SelectableChannel sc, R request) throws Exception {
+	public void registor(SelectableChannel sc, R request) {
 		try {
 			queue4medley.put(new Object[] { sc, request });
 			selector.wakeup();
@@ -306,7 +306,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		}
 	}
 
-	public void registor(ServerSocketChannel... sscs) throws IOException {
+	public void registor(ServerSocketChannel... sscs) {
 		try {
 			for (ServerSocketChannel ssc : sscs)
 				queue4server.put(ssc);
@@ -316,7 +316,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		}
 	}
 
-	public void registor(SocketChannel... scs) throws IOException {
+	public void registor(SocketChannel... scs) {
 		try {
 			for (SocketChannel sc : scs)
 				queue4client.put(sc);
