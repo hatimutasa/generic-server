@@ -8,14 +8,12 @@ import com.myrice.core.Remote;
 import com.myrice.util.POJO;
 
 /**
- * 上下文
+ * 涓婁笅鏂囧鍣ㄩ粯璁ゅ疄鐜扮被
  * 
  * @author yiyongpeng
  * 
  */
 public class ContextImpl extends POJO implements Remote, Context {
-	private static final long serialVersionUID = -2520602227624923821L;
-
 	private Map<String, Object> context = new HashMap<String, Object>(1);
 
 	public Object getAttribute(String name) {

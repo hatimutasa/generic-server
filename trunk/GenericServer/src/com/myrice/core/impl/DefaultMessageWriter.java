@@ -82,9 +82,9 @@ public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
 		R request = (R) key.attachment();
 		try {
 			if (notifier.fireOnWrite(request, responseFactory.create(key)))
-				connector.processRead(key);// ±¨ÎÄÍêÕûĞ´³ö£¬ÇëÇó¶ÁÈ¡
+				connector.processRead(key);// æŠ¥æ–‡å®Œæ•´å†™å‡ºï¼Œè¯·æ±‚è¯»å–
 			else
-				connector.processWrite(key);// ±¨ÎÄÎ´Ğ´Íê£¬¼ÌĞøÇëÇóĞ´
+				connector.processWrite(key);// æŠ¥æ–‡æœªå†™å®Œï¼Œç»§ç»­è¯·æ±‚å†™
 		} catch (ClosedChannelException e) {
 			notifier.fireOnClosed(request);
 		} catch (Exception e) {

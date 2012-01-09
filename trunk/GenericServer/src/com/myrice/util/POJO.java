@@ -15,7 +15,6 @@ public class POJO {
 		HashMap<String, Object> already = new HashMap<String, Object>(2);
 		StringBuffer sb = new StringBuffer("{");
 
-		// ×´Ì¬ÁÐ±í
 		toString(obj, obj.getClass(), sb, already);
 
 		sb.append("}");

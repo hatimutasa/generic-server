@@ -1,7 +1,7 @@
 package com.myrice.core;
 
 /**
- * ÔËĞĞÊ±·ÃÎÊÒì³£
+ * è¿è¡Œæ—¶è®¿é—®å¼‚å¸¸
  * 
  * @author yiyongpeng
  * 

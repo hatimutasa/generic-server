@@ -73,9 +73,9 @@ public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
 		R request = (R) key.attachment();
 		try {
 			if (notifier.fireOnRead(request))
-				connector.processWrite(key);// 读到完整报文，请求写
+				connector.processWrite(key);// 璇诲埌瀹屾暣鎶ユ枃锛岃姹傚啓
 			else
-				connector.processRead(key);// 不完整报文，继续读取
+				connector.processRead(key);// 涓嶅畬鏁存姤鏂囷紝缁х画璇诲彇
 		} catch (ClosedChannelException e) {
 			notifier.fireOnClosed(request);
 		} catch (Exception e) {

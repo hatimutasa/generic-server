@@ -71,5 +71,4 @@ public final class ThreadContext {
 	private static final BlockingQueue<Map<Object, Object>> recycle = new ArrayBlockingQueue<Map<Object, Object>>(
 			RECYCLE_MAX);
 
-	private static final long serialVersionUID = -487361707658106598L;
 }
