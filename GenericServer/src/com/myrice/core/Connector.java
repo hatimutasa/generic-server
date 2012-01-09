@@ -4,14 +4,14 @@ import java.nio.channels.SelectionKey;
 import java.util.concurrent.Executor;
 
 /**
- * Á¬½ÓÆ÷
+ * è¿æ¥å™¨
  * 
  * @author yiyongpeng
  * 
  * @param <R>
- *            ÇëÇóÀàĞÍ
+ *            è¯·æ±‚ç±»å‹
  * @param <W>
- *            ÏìÓ¦ÀàĞÍ
+ *            å“åº”ç±»å‹
  */
 public interface Connector<R, W> {
 

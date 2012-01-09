@@ -34,12 +34,12 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	private MessageReader<R, W> reader;
 	private MessageWriter<R, W> writer;
 
-	private BlockingQueue<SelectionKey> queue4read;// ¶Á
-	private BlockingQueue<SelectionKey> queue4write;// Ğ´
+	private BlockingQueue<SelectionKey> queue4read;// è¯»
+	private BlockingQueue<SelectionKey> queue4write;// å†™
 
-	private BlockingQueue<ServerSocketChannel> queue4server;// ·şÎñ¶Ë
-	private BlockingQueue<SocketChannel> queue4client;// ¿Í»§¶Ë
-	private BlockingQueue<Object[]> queue4medley;// »ìºÏÇëÇó
+	private BlockingQueue<ServerSocketChannel> queue4server;// æœåŠ¡ç«¯
+	private BlockingQueue<SocketChannel> queue4client;// å®¢æˆ·ç«¯
+	private BlockingQueue<Object[]> queue4medley;// æ··åˆè¯·æ±‚
 
 	private RequestFactory<R> requestFactory;
 	private ResponseFactory<W> responseFactory;
@@ -174,11 +174,11 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
 	@SuppressWarnings("unchecked")
 	protected void addRegistor() {
-		// Ìí¼Ó¶ÁĞ´ÇëÇó×¢²áÆ÷
+		// æ·»åŠ è¯»å†™è¯·æ±‚æ³¨å†Œå™¨
 		addRegistors(queue4write, SelectionKey.OP_WRITE);
 		addRegistors(queue4read, SelectionKey.OP_READ);
 
-		// Ìí¼Ó»ìºÏÇëÇó×¢²áÆ÷
+		// æ·»åŠ æ··åˆè¯·æ±‚æ³¨å†Œå™¨
 		while (queue4medley.isEmpty() == false)
 			try {
 				Object[] aq = queue4medley.poll();
@@ -187,7 +187,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 				notifier.fireOnError(e);
 			}
 
-		// Ìí¼ÓÌ×½Ó×ÖÇëÇó×¢²áÆ÷
+		// æ·»åŠ å¥—æ¥å­—è¯·æ±‚æ³¨å†Œå™¨
 		while (queue4client.isEmpty() == false)
 			try {
 				accept4server(queue4client.poll());
@@ -195,7 +195,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 				notifier.fireOnError(e);
 			}
 
-		// Ìí¼Ó·şÎñÆ÷ÇëÇó×¢²áÆ÷
+		// æ·»åŠ æœåŠ¡å™¨è¯·æ±‚æ³¨å†Œå™¨
 		while (queue4server.isEmpty() == false)
 			try {
 				addRegistor(queue4server.poll(), SelectionKey.OP_ACCEPT, null);
@@ -232,7 +232,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 			return;
 
 		if (notifier.isEmpty())
-			throw new AccessException("Ã»ÓĞ×¢²áÈÎºÎ´¦ÀíÆ÷¡£");
+			throw new AccessException("æ²¡æœ‰æ³¨å†Œä»»ä½•å¤„ç†å™¨ã€‚");
 
 		synchronized (this) {
 			try {

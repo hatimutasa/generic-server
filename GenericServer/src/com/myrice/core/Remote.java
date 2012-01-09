@@ -1,7 +1,7 @@
 package com.myrice.core;
 
 /**
- * 远程调用接口标记
+ * 杩滅▼璋冪敤鎺ュ彛鏍囪
  * 
  * @author yiyongpeng
  * 
