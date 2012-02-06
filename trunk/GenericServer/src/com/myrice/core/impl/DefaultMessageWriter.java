@@ -31,6 +31,10 @@ public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
 				keepAliveTime, unit, workQueue);
 	}
 
+	public DefaultMessageWriter(Executor writer) {
+		this.executor = writer;
+	}
+
 	public void destory() {
 		if (this.executor == connector.getExecutor())
 			this.executor = null;
