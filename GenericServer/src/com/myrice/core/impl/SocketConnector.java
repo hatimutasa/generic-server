@@ -47,6 +47,22 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	protected Notifier<R, W> notifier;
 	private String name = "SelectorHandler-" + nextId();
 
+	public SocketConnector(ExecutorService executer,
+			RequestFactory<R> requestFactory, ResponseFactory<W> responseFactory)
+			throws IOException {
+		this(executer, new DefaultNotifier<R, W>(),
+				new DefaultMessageReader<R, W>(),
+				new DefaultMessageWriter<R, W>(), requestFactory,
+				responseFactory);
+	}
+
+	public SocketConnector(RequestFactory<R> requestFactory,
+			ResponseFactory<W> responseFactory) throws IOException {
+		this(new ThreadPoolExecutor(20, 72, 60, TimeUnit.SECONDS,
+				new ArrayBlockingQueue<Runnable>(THREAD_POOL_QUEUE_MAX)),
+				requestFactory, responseFactory);
+	}
+
 	public SocketConnector(ExecutorService executer, Notifier<R, W> notifer,
 			MessageReader<R, W> reader, MessageWriter<R, W> writer,
 			RequestFactory<R> requestFactory, ResponseFactory<W> responseFactory)
@@ -84,22 +100,6 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		return nextId++;
 	}
 
-	public SocketConnector(ExecutorService executer,
-			RequestFactory<R> requestFactory, ResponseFactory<W> responseFactory)
-			throws IOException {
-		this(executer, new DefaultNotifier<R, W>(),
-				new DefaultMessageReader<R, W>(),
-				new DefaultMessageWriter<R, W>(), requestFactory,
-				responseFactory);
-	}
-
-	public SocketConnector(RequestFactory<R> requestFactory,
-			ResponseFactory<W> responseFactory) throws IOException {
-		this(new ThreadPoolExecutor(20, 72, 60, TimeUnit.SECONDS,
-				new ArrayBlockingQueue<Runnable>(THREAD_POOL_QUEUE_MAX)),
-				requestFactory, responseFactory);
-	}
-
 	@SuppressWarnings("unchecked")
 	public void run() {
 		try {
@@ -127,16 +127,16 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 						key = keys.next();
 						keys.remove();
 						if (key.isValid()) {
-							if (key.isAcceptable()) {
-								notifier.fireOnAccept();
-								ss = ((ServerSocketChannel) key.channel());
-								accept4server(ss.accept());
-							} else if (key.isReadable()) {
+							if (key.isReadable()) {
 								key.cancel();
 								reader.processRequest(key);
 							} else if (key.isWritable()) {
 								key.cancel();
 								writer.processRequest(key);
+							} else if (key.isAcceptable()) {
+								notifier.fireOnAccept();
+								ss = ((ServerSocketChannel) key.channel());
+								accept4server(ss.accept());
 							}
 						} else {
 							key.cancel();

@@ -28,6 +28,10 @@ public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
 				keepAliveTime, unit, workQueue);
 	}
 
+	public DefaultMessageReader(Executor reader) {
+		this.executor = reader;
+	}
+
 	public void destory() {
 		if (executor == connector.getExecutor())
 			executor = null;
