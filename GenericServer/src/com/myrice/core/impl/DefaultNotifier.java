@@ -64,4 +64,16 @@ public class DefaultNotifier<R, W> implements Notifier<R, W> {
 	public void removeHandler(ServerHandler<R, W> listener) {
 		this.listeners.remove(listener);
 	}
+
+	public void init() {
+		int length = listeners.size();
+		for (int i = 0; i < length; i++)
+			listeners.get(i).init();
+	}
+
+	public void destory() {
+		int length = listeners.size();
+		for (int i = 0; i < length; i++)
+			listeners.get(i).destory();
+	}
 }

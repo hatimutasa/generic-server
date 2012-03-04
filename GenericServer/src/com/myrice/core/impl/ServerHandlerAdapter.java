@@ -4,6 +4,12 @@ import com.myrice.core.ServerHandler;
 
 public class ServerHandlerAdapter<R, W> implements ServerHandler<R, W> {
 
+	public void destory() {
+	}
+
+	public void init() {
+	}
+
 	public void onAccept() throws Exception {
 	}
 

@@ -1,7 +1,7 @@
 package com.myrice.core;
 
 import java.nio.channels.SelectionKey;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  * 连接器
@@ -31,5 +31,5 @@ public interface Connector<R, W> {
 
 	ResponseFactory<W> getResponseFactory();
 
-	Executor getExecutor();
+	ExecutorService getExecutor();
 }

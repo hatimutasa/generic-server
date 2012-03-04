@@ -20,4 +20,8 @@ public interface Notifier<R, W> {
 
 	boolean isEmpty();
 
+	void init();
+
+	void destory();
+
 }
