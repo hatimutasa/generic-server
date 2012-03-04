@@ -14,4 +14,8 @@ public interface ServerHandler<R, W> {
 
 	void onAccept() throws Exception;
 
+	void init();
+
+	void destory();
+
 }

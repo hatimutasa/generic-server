@@ -6,6 +6,7 @@ import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -38,7 +39,18 @@ public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
 	public void destory() {
 		if (this.executor == connector.getExecutor())
 			this.executor = null;
-
+		else {
+			if (executor instanceof ExecutorService) {
+				ExecutorService service = (ExecutorService) executor;
+				executor = null;
+				service.shutdown();
+				try {
+					service.awaitTermination(10L, TimeUnit.SECONDS);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 		this.connector = null;
 		this.notifier = null;
 		this.responseFactory = null;

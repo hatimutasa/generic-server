@@ -10,8 +10,8 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -150,17 +150,23 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 			notifier.fireOnError(e);
 		} finally {
 			thread = null;
+			destory();
 		}
 	}
 
 	protected void destory() {
 		reader.destory();
 		writer.destory();
+		notifier.destory();
 	}
 
 	protected void init() {
+		if (executer == null || executer.isShutdown()) {
+			executer = Executors.newCachedThreadPool();
+		}
 		reader.init(this);
 		writer.init(this);
+		notifier.init();
 	}
 
 	protected void accept(SelectableChannel sc, R request) throws Exception {
@@ -237,6 +243,8 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		synchronized (this) {
 			try {
 				selector = Selector.open();
+				if (executer == null)
+					executer = Executors.newCachedThreadPool();
 				thread = new Thread(this, name);
 				thread.setDaemon(true);
 				thread.start();
@@ -250,7 +258,6 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	public void stop() {
 		if (thread == null)
 			return;
-
 		Thread tmp = thread;
 		thread = null;
 		selector.wakeup();
@@ -261,9 +268,24 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		}
 		try {
 			executer.shutdown();
-			executer.awaitTermination(30L, TimeUnit.SECONDS);
+			executer.awaitTermination(10L, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
+		}
+		closeSelector();
+	}
+
+	protected void closeSelector() {
+		// 关闭所有注册的键
+		Iterator<SelectionKey> keys = selector.keys().iterator();
+		while (keys.hasNext()) {
+			SelectionKey key = keys.next();
+			try {
+				key.channel().close();
+			} catch (IOException e) {
+			} finally {
+				key.cancel();
+			}
 		}
 		try {
 			selector.close();
@@ -272,7 +294,6 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		} finally {
 			selector = null;
 		}
-		destory();
 	}
 
 	public Notifier<R, W> getNotifier() {
@@ -338,7 +359,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		return requestFactory;
 	}
 
-	public Executor getExecutor() {
+	public ExecutorService getExecutor() {
 		return executer;
 	}
 }
