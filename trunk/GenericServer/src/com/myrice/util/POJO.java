@@ -1,10 +1,17 @@
 package com.myrice.util;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-public class POJO {
+/**
+ * 简单数据对象
+ * 
+ * @author yiyongpeng
+ * 
+ */
+public abstract class POJO {
 
 	@Override
 	public String toString() {
@@ -25,6 +32,10 @@ public class POJO {
 			Map<String, Object> already) {
 		if (clazz == null)
 			return;
+		if (clazz.isArray() || clazz.isPrimitive()) {
+			appendValue(obj, sb);
+			return;
+		}
 		String name = null;
 		Object value = null;
 		Method[] fields = clazz.getMethods();
@@ -37,7 +48,7 @@ public class POJO {
 						already.put(name, null);
 						if (name.startsWith("get")) {
 							if ((value = method.invoke(obj)) != obj) {
-								if (!sb.toString().equals("{"))
+								if (sb.length() > 1)
 									sb.append(", ");
 								sb.append(name.substring(3, 4).toLowerCase());
 								sb.append(name.substring(4));
@@ -45,10 +56,10 @@ public class POJO {
 								appendValue(value, sb);
 							}
 						} else if (name.startsWith("is")
-						/* && method.getReturnType() == boolean.class */) {
+								&& method.getReturnType() == boolean.class) {
 							if ((value = method.invoke(obj)) != obj) {
-								if (!sb.toString().equals("{"))
-									sb.append(" ");
+								if (sb.length() > 1)
+									sb.append(", ");
 								sb.append(name.substring(2, 3).toLowerCase());
 								sb.append(name.substring(3));
 								sb.append("=");
@@ -65,20 +76,53 @@ public class POJO {
 	}
 
 	private static void appendValue(Object value, StringBuffer sb) {
-		boolean array = value != null ? value.getClass().isArray() : false;
+		boolean array = value != null ? !(value instanceof Class)
+				&& value.getClass().isArray() : false;
 		boolean flag = value != null && !(value instanceof POJO)
 				&& array == false;
 		if (flag)
 			sb.append("\"");
 		if (array) {
-			Object[] arry = (Object[]) value;
-			sb.append("[");
-			for (Object obj : arry) {
-				if (obj != arry[0])
-					sb.append(", ");
-				appendValue(obj, sb);
+			Class<?> clazz = value.getClass();
+			if (clazz == boolean[].class) {
+				boolean[] arry = (boolean[]) value;
+				sb.append(Arrays.toString(arry));
+			} else if (clazz == char[].class) {
+				char[] arry = (char[]) value;
+				sb.append(Arrays.toString(arry));
+			} else if (clazz == byte[].class) {
+				byte[] arry = (byte[]) value;
+				sb.append(Arrays.toString(arry));
+			} else if (clazz == short[].class) {
+				short[] arry = (short[]) value;
+				sb.append(Arrays.toString(arry));
+			} else if (clazz == int[].class) {
+				int[] arry = (int[]) value;
+				sb.append(Arrays.toString(arry));
+			} else if (clazz == long[].class) {
+				long[] arry = (long[]) value;
+				sb.append(Arrays.toString(arry));
+			} else if (clazz == float[].class) {
+				float[] arry = (float[]) value;
+				sb.append(Arrays.toString(arry));
+			} else if (clazz == double[].class) {
+				double[] arry = (double[]) value;
+				sb.append(Arrays.toString(arry));
+			} else if (clazz == String[].class) {
+				String[] arry = (String[]) value;
+				sb.append(Arrays.toString(arry));
+			} else if (value instanceof Object[]) {
+				Object[] arry = (Object[]) value;
+				sb.append("[");
+				for (int i = 0; i < arry.length; i++) {
+					if (i > 0)
+						sb.append(", ");
+					appendValue(arry[i], sb);
+				}
+				sb.append("]");
+			} else {
+				sb.append(value.toString());
 			}
-			sb.append("]");
 		} else
 			sb.append(value);
 		if (flag)
