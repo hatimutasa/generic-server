@@ -170,8 +170,8 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	}
 
 	protected void accept(SelectableChannel sc, R request) throws Exception {
-		addRegistor(sc, SelectionKey.OP_READ, request);
 		notifier.fireOnAccepted(request);
+		addRegistor(sc, SelectionKey.OP_READ, request);
 	}
 
 	protected void accept4server(SocketChannel sc) throws Exception {
