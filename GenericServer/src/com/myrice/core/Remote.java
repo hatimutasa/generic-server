@@ -6,7 +6,7 @@ package com.myrice.core;
  * @author yiyongpeng
  * 
  */
-public interface Remote extends java.rmi.Remote {
+public interface Remote {
 
 	/** Session scope */
 	String SESSION = "__SESSION__";
