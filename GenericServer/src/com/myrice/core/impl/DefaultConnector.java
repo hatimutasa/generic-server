@@ -12,7 +12,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import com.myrice.core.AccessException;
@@ -20,19 +19,16 @@ import com.myrice.core.Connector;
 import com.myrice.core.MessageReader;
 import com.myrice.core.MessageWriter;
 import com.myrice.core.Notifier;
-import com.myrice.core.RequestFactory;
-import com.myrice.core.ResponseFactory;
 
-public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
+public class DefaultConnector<R> implements Connector<R>, Runnable {
 	private static final int QUEUE_REQUEST_MAX = 2048;
-	private static final int THREAD_POOL_QUEUE_MAX = 10000;
 	private Thread thread;
 	private ExecutorService executer;
 
 	protected Selector selector;
 
-	private MessageReader<R, W> reader;
-	private MessageWriter<R, W> writer;
+	private MessageReader<R> reader;
+	private MessageWriter<R> writer;
 
 	private BlockingQueue<SelectionKey> queue4read;// 读
 	private BlockingQueue<SelectionKey> queue4write;// 写
@@ -41,31 +37,20 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	private BlockingQueue<SocketChannel> queue4client;// 客户端
 	private BlockingQueue<Object[]> queue4medley;// 混合请求
 
-	private RequestFactory<R> requestFactory;
-	private ResponseFactory<W> responseFactory;
-
-	protected Notifier<R, W> notifier;
+	protected Notifier<R> notifier;
 	private String name = "SelectorHandler-" + nextId();
 
-	public SocketConnector(ExecutorService executer,
-			RequestFactory<R> requestFactory, ResponseFactory<W> responseFactory)
-			throws IOException {
-		this(executer, new DefaultNotifier<R, W>(),
-				new DefaultMessageReader<R, W>(),
-				new DefaultMessageWriter<R, W>(), requestFactory,
-				responseFactory);
+	public DefaultConnector(ExecutorService executer) throws IOException {
+		this(executer, new DefaultNotifier<R>(), new DefaultMessageReader<R>(),
+				new DefaultMessageWriter<R>());
 	}
 
-	public SocketConnector(RequestFactory<R> requestFactory,
-			ResponseFactory<W> responseFactory) throws IOException {
-		this(new ThreadPoolExecutor(20, 72, 60, TimeUnit.SECONDS,
-				new ArrayBlockingQueue<Runnable>(THREAD_POOL_QUEUE_MAX)),
-				requestFactory, responseFactory);
+	public DefaultConnector() throws IOException {
+		this(Executors.newCachedThreadPool());
 	}
 
-	public SocketConnector(ExecutorService executer, Notifier<R, W> notifer,
-			MessageReader<R, W> reader, MessageWriter<R, W> writer,
-			RequestFactory<R> requestFactory, ResponseFactory<W> responseFactory)
+	public DefaultConnector(ExecutorService executer, Notifier<R> notifer,
+			MessageReader<R> reader, MessageWriter<R> writer)
 			throws IOException {
 
 		this.executer = executer;
@@ -83,9 +68,6 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		this.queue4client = new ArrayBlockingQueue<SocketChannel>(
 				QUEUE_REQUEST_MAX);
 		this.queue4medley = new ArrayBlockingQueue<Object[]>(QUEUE_REQUEST_MAX);
-
-		this.requestFactory = requestFactory;
-		this.responseFactory = responseFactory;
 
 		this.notifier = notifer;
 
@@ -143,11 +125,11 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 							notifier.fireOnClosed((R) key.attachment());
 						}
 					} catch (Exception e) {
-						notifier.fireOnError(e);
+						notifier.fireOnError(null, e);
 					}
 			}
 		} catch (Exception e) {
-			notifier.fireOnError(e);
+			notifier.fireOnError(null, e);
 		} finally {
 			thread = null;
 			destory();
@@ -158,6 +140,12 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		reader.destory();
 		writer.destory();
 		notifier.destory();
+		executer.shutdown();
+		try {
+			executer.awaitTermination(10L, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 	protected void init() {
@@ -170,43 +158,49 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 	}
 
 	protected void accept(SelectableChannel sc, R request) throws Exception {
-		notifier.fireOnAccepted(request);
-		addRegistor(sc, SelectionKey.OP_READ, request);
+		try {
+			request = notifier.fireOnAccepted(sc, request);// 必须先通知再请求读数据
+			addRegistor(sc, SelectionKey.OP_READ, request);
+		} catch (Exception e) {
+			notifier.fireOnError(request, e);
+		}
 	}
 
-	protected void accept4server(SocketChannel sc) throws Exception {
-		accept(sc, requestFactory.create(sc));
+	protected void accept4server(SelectableChannel sc) throws Exception {
+		accept(sc, null);
 	}
 
 	@SuppressWarnings("unchecked")
 	protected void addRegistor() {
-		// 添加读写请求注册器
-		addRegistors(queue4write, SelectionKey.OP_WRITE);
+		// 添加读写请求
 		addRegistors(queue4read, SelectionKey.OP_READ);
+		addRegistors(queue4write, SelectionKey.OP_WRITE);
 
-		// 添加混合请求注册器
+		// 处理自定义接收请求
 		while (queue4medley.isEmpty() == false)
 			try {
 				Object[] aq = queue4medley.poll();
-				accept((SelectableChannel) aq[0], (R) aq[1]);
+				SelectableChannel sc = (SelectableChannel) aq[0];
+				R request = (R) aq[1];
+				accept(sc, request);
 			} catch (Exception e) {
-				notifier.fireOnError(e);
+				notifier.fireOnError(null, e);
 			}
 
-		// 添加套接字请求注册器
+		// 处理接收套接字请求
 		while (queue4client.isEmpty() == false)
 			try {
 				accept4server(queue4client.poll());
 			} catch (Exception e) {
-				notifier.fireOnError(e);
+				e.printStackTrace();
 			}
 
-		// 添加服务器请求注册器
+		// 处理接听套接字请求
 		while (queue4server.isEmpty() == false)
 			try {
 				addRegistor(queue4server.poll(), SelectionKey.OP_ACCEPT, null);
 			} catch (Exception e) {
-				notifier.fireOnError(e);
+				notifier.fireOnError(null, e);
 			}
 	}
 
@@ -219,7 +213,11 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 				request = (R) key.attachment();
 				addRegistor(key.channel(), ops, request);
 			} catch (Exception e) {
-				notifier.fireOnClosed(request);
+				try {
+					notifier.fireOnClosed(request);
+				} catch (Exception e1) {
+					notifier.fireOnError(request, e1);
+				}
 			}
 		}
 	}
@@ -296,25 +294,27 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 		}
 	}
 
-	public Notifier<R, W> getNotifier() {
+	public Notifier<R> getNotifier() {
 		return notifier;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void processRead(SelectionKey key) {
 		try {
 			queue4read.put(key);
 			selector.wakeup();
 		} catch (InterruptedException e) {
-			notifier.fireOnError(e);
+			notifier.fireOnError((R) key.attachment(), e);
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public void processWrite(SelectionKey key) {
 		try {
 			queue4write.put(key);
 			selector.wakeup();
 		} catch (InterruptedException e) {
-			notifier.fireOnError(e);
+			notifier.fireOnError((R) key.attachment(), e);
 		}
 	}
 
@@ -323,7 +323,7 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 			queue4medley.put(new Object[] { sc, request });
 			selector.wakeup();
 		} catch (InterruptedException e) {
-			notifier.fireOnError(e);
+			notifier.fireOnError(request, e);
 		}
 	}
 
@@ -349,14 +349,6 @@ public class SocketConnector<R, W> implements Connector<R, W>, Runnable {
 
 	public boolean isRuning() {
 		return thread != null;
-	}
-
-	public ResponseFactory<W> getResponseFactory() {
-		return responseFactory;
-	}
-
-	public RequestFactory<R> getRequestFactory() {
-		return requestFactory;
 	}
 
 	public ExecutorService getExecutor() {

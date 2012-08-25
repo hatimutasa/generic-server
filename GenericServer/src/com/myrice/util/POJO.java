@@ -1,6 +1,7 @@
 package com.myrice.util;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +20,10 @@ public abstract class POJO {
 	}
 
 	public static String toString(Object obj) {
-		HashMap<String, Object> already = new HashMap<String, Object>(2);
+		return toString(obj, new HashMap<Object, Object>(2));
+	}
+
+	public static String toString(Object obj, Map<Object, Object> already) {
 		StringBuffer sb = new StringBuffer("{");
 
 		toString(obj, obj.getClass(), sb, already);
@@ -29,11 +33,11 @@ public abstract class POJO {
 	}
 
 	public static void toString(Object obj, Class<?> clazz, StringBuffer sb,
-			Map<String, Object> already) {
+			Map<Object, Object> already) {
 		if (clazz == null)
 			return;
 		if (clazz.isArray() || clazz.isPrimitive()) {
-			appendValue(obj, sb);
+			appendValue(obj, sb, already);
 			return;
 		}
 		String name = null;
@@ -42,18 +46,23 @@ public abstract class POJO {
 		try {
 			for (Method method : fields)
 				if (method.getParameterTypes().length == 0
-						&& method.getReturnType() != void.class) {
+						&& method.getReturnType() != void.class
+						&& method.getModifiers() != Modifier.STATIC) {
 					name = method.getName();
 					if (already.containsKey(name) == false) {
 						already.put(name, null);
 						if (name.startsWith("get")) {
 							if ((value = method.invoke(obj)) != obj) {
+								if (value != null && already.containsKey(value)) {
+									continue;
+								}
+								already.put(value, null);
 								if (sb.length() > 1)
 									sb.append(", ");
 								sb.append(name.substring(3, 4).toLowerCase());
 								sb.append(name.substring(4));
 								sb.append("=");
-								appendValue(value, sb);
+								appendValue(value, sb, already);
 							}
 						} else if (name.startsWith("is")
 								&& method.getReturnType() == boolean.class) {
@@ -63,7 +72,7 @@ public abstract class POJO {
 								sb.append(name.substring(2, 3).toLowerCase());
 								sb.append(name.substring(3));
 								sb.append("=");
-								appendValue(value, sb);
+								appendValue(value, sb, already);
 							}
 						}
 					}
@@ -75,7 +84,8 @@ public abstract class POJO {
 		}
 	}
 
-	private static void appendValue(Object value, StringBuffer sb) {
+	private static void appendValue(Object value, StringBuffer sb,
+			Map<Object, Object> already) {
 		boolean array = value != null ? !(value instanceof Class)
 				&& value.getClass().isArray() : false;
 		boolean flag = value != null && !(value instanceof POJO)
@@ -117,20 +127,21 @@ public abstract class POJO {
 				for (int i = 0; i < arry.length; i++) {
 					if (i > 0)
 						sb.append(", ");
-					appendValue(arry[i], sb);
+					appendValue(arry[i], sb, already);
 				}
 				sb.append("]");
 			} else {
 				sb.append(value.toString());
 			}
-		} else
+		} else if (!(value instanceof POJO)) {
 			sb.append(value);
+		}
 		if (flag)
 			sb.append("\"");
 	}
 
 	public static void toString(Object obj, Class<?>[] clases, StringBuffer sb,
-			Map<String, Object> already) {
+			Map<Object, Object> already) {
 		for (Class<?> clazz : clases)
 			toString(obj, clazz, sb, already);
 	}

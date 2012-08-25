@@ -1,16 +1,17 @@
 package com.myrice.core.impl;
 
+import java.nio.channels.SelectableChannel;
 import java.util.LinkedList;
 import java.util.List;
 
 import com.myrice.core.Notifier;
 import com.myrice.core.ServerHandler;
 
-public class DefaultNotifier<R, W> implements Notifier<R, W> {
-	private List<ServerHandler<R, W>> listeners;
+public class DefaultNotifier<R> implements Notifier<R> {
+	private List<ServerHandler<R>> listeners;
 
 	public DefaultNotifier() {
-		this.listeners = new LinkedList<ServerHandler<R, W>>();
+		this.listeners = new LinkedList<ServerHandler<R>>();
 	}
 
 	public boolean isEmpty() {
@@ -23,10 +24,11 @@ public class DefaultNotifier<R, W> implements Notifier<R, W> {
 			listeners.get(i).onAccept();
 	}
 
-	public void fireOnAccepted(R request) throws Exception {
+	public R fireOnAccepted(SelectableChannel sc, R prev) throws Exception {
 		int length = listeners.size();
 		for (int i = 0; i < length; i++)
-			listeners.get(i).onAccepted(request);
+			prev = listeners.get(i).onAccepted(sc, prev);
+		return prev;
 	}
 
 	public void fireOnClosed(R request) {
@@ -35,33 +37,35 @@ public class DefaultNotifier<R, W> implements Notifier<R, W> {
 			listeners.get(i).onClosed(request);
 	}
 
-	public void fireOnError(Exception e) {
+	public void fireOnError(R request, Exception e) {
 		int length = listeners.size();
 		for (int i = 0; i < length; i++)
-			listeners.get(i).onError(e);
+			listeners.get(i).onError(request, e);
 	}
 
 	public boolean fireOnRead(R request) throws Exception {
 		boolean suc = false;
 		int length = listeners.size();
 		for (int i = 0; i < length; i++)
-			suc = listeners.get(i).onRead(request);
+			suc = listeners.get(i).onRead(request, suc);
 		return suc;
 	}
 
-	public boolean fireOnWrite(R request, W response) throws Exception {
-		boolean suc = false;
+	public boolean fireOnWrite(R request) throws Exception {
+		boolean bool = false;
 		int length = listeners.size();
 		for (int i = 0; i < length; i++)
-			suc = listeners.get(i).onWrite(request, response);
-		return suc;
+			bool = listeners.get(i).onWrite(request, bool);
+		return bool;
 	}
 
-	public void addHandler(ServerHandler<R, W> listener) {
-		this.listeners.add(listener);
+	public void addHandler(ServerHandler<R> listener) {
+		if (this.listeners.contains(listener) == false) {
+			this.listeners.add(listener);
+		}
 	}
 
-	public void removeHandler(ServerHandler<R, W> listener) {
+	public void removeHandler(ServerHandler<R> listener) {
 		this.listeners.remove(listener);
 	}
 
