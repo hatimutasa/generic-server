@@ -1,33 +1,37 @@
 package com.myrice.core.impl;
 
+import java.nio.channels.SelectableChannel;
+
 import com.myrice.core.ServerHandler;
 
-public class ServerHandlerAdapter<R, W> implements ServerHandler<R, W> {
-
-	public void destory() {
-	}
+public class ServerHandlerAdapter<R> extends DefaultContext implements
+		ServerHandler<R> {
 
 	public void init() {
+	}
+
+	public void destory() {
 	}
 
 	public void onAccept() throws Exception {
 	}
 
-	public void onAccepted(R request) throws Exception {
+	public R onAccepted(SelectableChannel sc, R prev) throws Exception {
+		return prev;
 	}
 
 	public void onClosed(R request) {
 	}
 
-	public void onError(Exception e) {
+	public void onError(R request, Exception e) {
 		e.printStackTrace();
 	}
 
-	public boolean onRead(R request) throws Exception {
+	public boolean onRead(R request, boolean prev) throws Exception {
 		return false;
 	}
 
-	public boolean onWrite(R request, W response) throws Exception {
+	public boolean onWrite(R request, boolean prev) throws Exception {
 		return false;
 	}
 

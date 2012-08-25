@@ -1,6 +1,6 @@
 package com.myrice.core.impl;
 
-import java.nio.channels.ClosedChannelException;
+import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -13,15 +13,12 @@ import java.util.concurrent.TimeUnit;
 import com.myrice.core.Connector;
 import com.myrice.core.MessageWriter;
 import com.myrice.core.Notifier;
-import com.myrice.core.ResponseFactory;
 
-public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
+public class DefaultMessageWriter<R> implements MessageWriter<R> {
 	private static final int CACHE_TASK_MAX = 50;
-	private Connector<R, W> connector;
-	private Notifier<R, W> notifier;
+	private Connector<R> connector;
+	private Notifier<R> notifier;
 	private Executor executor;
-
-	private ResponseFactory<W> responseFactory;
 
 	public DefaultMessageWriter() {
 	}
@@ -53,13 +50,11 @@ public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
 		}
 		this.connector = null;
 		this.notifier = null;
-		this.responseFactory = null;
 	}
 
-	public void init(Connector<R, W> connector) {
+	public void init(Connector<R> connector) {
 		this.connector = connector;
 		this.notifier = connector.getNotifier();
-		this.responseFactory = connector.getResponseFactory();
 
 		if (this.executor == null)
 			this.executor = connector.getExecutor();
@@ -97,19 +92,29 @@ public class DefaultMessageWriter<R, W> implements MessageWriter<R, W> {
 	protected void execute(SelectionKey key) {
 		R request = (R) key.attachment();
 		try {
-			if (notifier.fireOnWrite(request, responseFactory.create(key)))
+			if (notifier.fireOnWrite(request))
 				connector.processRead(key);// 报文完整写出，请求读取
 			else
 				connector.processWrite(key);// 报文未写完，继续请求写
-		} catch (ClosedChannelException e) {
-			notifier.fireOnClosed(request);
-		} catch (Exception e) {
+		} catch (IOException e) {
 			try {
-				notifier.fireOnError(e);
 				key.channel().close();
 			} catch (Exception e1) {
 			} finally {
 				notifier.fireOnClosed(request);
+			}
+		} catch (Exception e) {
+			try {
+				notifier.fireOnError(request, e);
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			} finally {
+				try {
+					key.channel().close();
+				} catch (IOException e1) {
+				} finally {
+					notifier.fireOnClosed(request);
+				}
 			}
 		}
 	}

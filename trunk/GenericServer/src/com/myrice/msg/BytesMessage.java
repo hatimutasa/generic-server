@@ -1,4 +1,4 @@
-package com.myrice.core.msg;
+package com.myrice.msg;
 
 public interface BytesMessage extends Message {
 
@@ -14,15 +14,15 @@ public interface BytesMessage extends Message {
 
 	char readChar();
 
-	double readDouble();
-
-	float readFloat();
+	short readShort();
 
 	int readInt();
 
 	long readLong();
 
-	short readShort();
+	float readFloat();
+
+	double readDouble();
 
 	int readUnsignedByte();
 
@@ -42,17 +42,17 @@ public interface BytesMessage extends Message {
 
 	void writeChar(char value);
 
-	void writeDouble(double value);
-
-	void writeFloat(float value);
+	void writeShort(short value);
 
 	void writeInt(int value);
 
 	void writeLong(long value);
 
-	void writeObject(Object value);
+	void writeFloat(float value);
 
-	void writeShort(short value);
+	void writeDouble(double value);
+
+	void writeObject(Object value);
 
 	void writeUTF(String value);
 

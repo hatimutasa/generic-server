@@ -1,6 +1,6 @@
 package com.myrice.core.impl;
 
-import java.nio.channels.ClosedChannelException;
+import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -14,10 +14,10 @@ import com.myrice.core.Connector;
 import com.myrice.core.MessageReader;
 import com.myrice.core.Notifier;
 
-public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
+public class DefaultMessageReader<R> implements MessageReader<R> {
 	private static final int CACHE_TASK_MAX = 50;
-	private Connector<R, W> connector;
-	private Notifier<R, W> notifier;
+	private Connector<R> connector;
+	private Notifier<R> notifier;
 	private Executor executor;
 
 	public DefaultMessageReader() {
@@ -50,7 +50,7 @@ public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
 		}
 	}
 
-	public void init(Connector<R, W> connector) {
+	public void init(Connector<R> connector) {
 		this.connector = connector;
 		notifier = connector.getNotifier();
 		if (executor == null)
@@ -93,15 +93,25 @@ public class DefaultMessageReader<R, W> implements MessageReader<R, W> {
 				connector.processWrite(key);// 读到完整报文，请求写
 			else
 				connector.processRead(key);// 不完整报文，继续读取
-		} catch (ClosedChannelException e) {
-			notifier.fireOnClosed(request);
-		} catch (Exception e) {
+		} catch (IOException e) {
 			try {
-				notifier.fireOnError(e);
 				key.channel().close();
-			} catch (Exception e1) {
+			} catch (IOException e1) {
 			} finally {
 				notifier.fireOnClosed(request);
+			}
+		} catch (Exception e) {
+			try {
+				notifier.fireOnError(request, e);
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			} finally {
+				try {
+					key.channel().close();
+				} catch (IOException e1) {
+				} finally {
+					notifier.fireOnClosed(request);
+				}
 			}
 		}
 	}
