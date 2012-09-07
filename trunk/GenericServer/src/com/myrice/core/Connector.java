@@ -8,18 +8,18 @@ import java.util.concurrent.ExecutorService;
  * 
  * @author yiyongpeng
  * 
- * @param <R>
+ * @param <C>
  *            请求类型
  * @param <W>
  *            响应类型
  */
-public interface Connector<R> {
+public interface Connector<C> {
 
 	void start();
 
 	void stop();
 
-	Notifier<R> getNotifier();
+	Notifier<C> getNotifier();
 
 	void processRead(SelectionKey key);
 
@@ -28,4 +28,6 @@ public interface Connector<R> {
 	boolean isRuning();
 
 	ExecutorService getExecutor();
+
+	void wakeup();
 }

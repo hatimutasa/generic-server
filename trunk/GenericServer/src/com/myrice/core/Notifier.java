@@ -8,17 +8,17 @@ public interface Notifier<R> {
 
 	void removeHandler(ServerHandler<R> listener);
 
-	void fireOnAccept() throws Exception;
+	void fireOnAccept();
 
 	R fireOnAccepted(SelectableChannel sc, R prev) throws Exception;
 
-	boolean fireOnRead(R request) throws Exception;
+	boolean fireOnRead(R request);
 
-	boolean fireOnWrite(R request) throws Exception;
+	boolean fireOnWrite(R request);
 
 	void fireOnClosed(R request);
 
-	void fireOnError(R request, Exception e);
+	void fireOnError(R request, Throwable e);
 
 	boolean isEmpty();
 

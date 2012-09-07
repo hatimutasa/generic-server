@@ -4,7 +4,7 @@ public interface WriteRequest extends Runnable {
 
 	void destroy();
 
-	void init(Session session);
+	void init(Connection session);
 
 	void flush();
 

@@ -4,7 +4,7 @@ import java.nio.channels.SelectableChannel;
 
 public interface ServerHandler<R> extends Context {
 
-	void onError(R request, Exception e);
+	void onError(R request, Throwable e);
 
 	void onClosed(R request);
 
@@ -14,7 +14,7 @@ public interface ServerHandler<R> extends Context {
 
 	R onAccepted(SelectableChannel sc, R prev) throws Exception;
 
-	void onAccept() throws Exception;
+	void onAccept() throws Throwable;
 
 	void destory();
 

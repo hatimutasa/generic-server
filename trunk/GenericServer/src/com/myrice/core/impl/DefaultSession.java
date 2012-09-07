@@ -1,97 +1,50 @@
 package com.myrice.core.impl;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.ByteChannel;
+import java.util.UUID;
 
 import com.myrice.core.AccessException;
-import com.myrice.core.MessageQueue;
+import com.myrice.core.Connection;
 import com.myrice.core.MessageOutput;
+import com.myrice.core.MessageQueue;
 import com.myrice.core.ServerContext;
 import com.myrice.core.Session;
-import com.myrice.core.WriteRequest;
 import com.myrice.filter.IFilterChain;
 import com.myrice.filter.IFilterChain.IChain;
 import com.myrice.filter.IProtocolEncodeFilter;
-import com.myrice.util.POJO;
 
-public class DefaultSession extends POJO implements Session {
+public class DefaultSession extends DefaultContext implements Session {
+	// private static final Logger log = Logger.getLogger(DefaultSession.class);
 
-	ServerContext server;
-	protected SocketChannel sc;
+	private ServerContext server;
+	protected Connection conn;
 
-	String sessionId = getClass().getCanonicalName() + "@" + hashCode();
-	private String address;
-	private int port;
 	private boolean closed;
 
-	public String getInetAddress() {
-		return getRemoteAddress() + ":" + getRemotePort();
-	}
-
-	public String getRemoteAddress() {
-		return address;
-	}
-
-	public int getRemotePort() {
-		return port;
+	String sessionId;
+	{
+		sessionId = UUID.randomUUID().toString();
 	}
 
 	public void flush() {
-		getWriteRequest().flush();
-	}
-
-	public boolean isBusy() {
-		if (contains(IO_BUSY)) {
-			return (Boolean) getAttribute(IO_BUSY);
-		}
-		return false;
-	}
-
-	public boolean isClosed() {
-		return closed;
-	}
-
-	protected void setClosed(boolean bool) {
-		this.closed = bool;
-	}
-
-	public SocketChannel getSocketChannel() {
-		return sc;
-	}
-
-	public void setBusy(boolean value) {
-		setAttribute(IO_BUSY, value);
+		conn.getWriteRequest().flush();
 	}
 
 	public void init(ServerContext server) {
 		this.server = server;
 	}
 
-	protected void init(SocketChannel sc) {
-		this.sc = sc;
-		this.address = sc.socket().getInetAddress().getHostAddress();
-		this.port = sc.socket().getPort();
-	}
-
-	public ServerContext getServerHandler() {
-		return server;
-	}
-
-	public WriteRequest getWriteRequest() {
-		WriteRequest output = (WriteRequest) getAttribute(IO_WRITE_REQUEST);
-		if (output == null) {
-			output = server.createWriteRequest();
-			setAttribute(IO_WRITE_REQUEST, output);
+	public void init(Connection conn) {
+		this.conn = conn;
+		if (conn instanceof DefaultConnection) {
+			((DefaultConnection) conn).setSession(this);
 		}
-		output.init(this);
-		return output;
 	}
 
 	@SuppressWarnings("unchecked")
 	public void send(Object message) {
 		if (server == null)
-			throw new AccessException("session is closed!");
+			throw new AccessException("session is destory!");
 
 		IChain<IProtocolEncodeFilter> chain = (IChain<IProtocolEncodeFilter>) server
 				.getFilterChain().getFirstChain(
@@ -103,9 +56,9 @@ public class DefaultSession extends POJO implements Session {
 		}
 		try {
 			MessageOutput output = getMessageOutputQueue();
-			chain.getFilter().messageEncode(this, message, output, chain);
-		} catch (Exception e) {
-			server.getNotifier().fireOnError(this, e);
+			chain.getFilter().messageEncode(conn, message, output, chain);
+		} catch (Throwable e) {
+			server.getNotifier().fireOnError(conn, e);
 		}
 	}
 
@@ -113,81 +66,11 @@ public class DefaultSession extends POJO implements Session {
 		return sessionId;
 	}
 
-	public void setSessionId(String sid) {
-		if (server != null) {
-			server.removeSessionContext(sessionId);
-		}
-		this.sessionId = sid;
-	}
+	public void setSessionId(String sessionId) {
+		getServerHandler().setSessionContext(sessionId, this);
+		getServerHandler().removeSessionContext(getSessionId());
 
-	/* Session Scope begin */
-
-	public void clear() {
-		server.getSessionContext(sessionId).clear();
-	}
-
-	public boolean contains(String name) {
-		return server.getSessionContext(sessionId).contains(name);
-	}
-
-	public Object getAttribute(String name) {
-		return server.getSessionContext(sessionId).getAttribute(name);
-	}
-
-	public String[] getAttributeNames() {
-		return server.getSessionContext(sessionId).getAttributeNames();
-	}
-
-	public Object[] getAttributeValues() {
-		return server.getSessionContext(sessionId).getAttributeValues();
-	}
-
-	public Object removeAttribute(String name) {
-		return server.getSessionContext(sessionId).removeAttribute(name);
-	}
-
-	public Object setAttribute(String name, Object value) {
-		return server.getSessionContext(sessionId).setAttribute(name, value);
-	}
-
-	/* Session Scope end */
-
-	public ByteBuffer onRead() throws IOException {
-		ByteBuffer buff = getInputBuffer();
-		SocketChannel sc = getSocketChannel();
-		int size = 0;
-		while ((size = sc.read(buff)) > 0) {
-			if (buff.remaining() == 0) {
-				ByteBuffer tmp = buff;
-				buff = ByteBuffer.allocate(tmp.capacity() * 2);
-				buff.put((ByteBuffer) tmp.flip());
-				setInputBuffer(buff);
-			}
-		}
-		if (size == -1) {
-			sc.close();// 到达文件尾
-		}
-		return buff;
-	}
-
-	private void setInputBuffer(ByteBuffer buff) {
-		setAttribute(IO_BUFFER, buff);
-	}
-
-	public ByteBuffer getInputBuffer() {
-		ByteBuffer buff = (ByteBuffer) getAttribute(IO_BUFFER);
-		if (buff == null) {
-			buff = ByteBuffer.allocate(getBufferCapacity());
-			setAttribute(IO_BUFFER, buff);
-		}
-		return buff;
-	}
-
-	private int getBufferCapacity() {
-		if (contains(IO_BUFFER_CAPACITY)) {
-			return (Integer) getAttribute(IO_BUFFER_CAPACITY);
-		}
-		return CAPACITY;
+		this.sessionId = sessionId;
 	}
 
 	public MessageQueue getMessageOutputQueue() {
@@ -208,11 +91,36 @@ public class DefaultSession extends POJO implements Session {
 		return queue;
 	}
 
-	public void destory() {
-		this.server = null;
-		this.sc = null;
-		this.sessionId = null;
-		this.address = null;
+	public ByteChannel getSocketChannel() {
+		return conn.getSocketChannel();
+	}
+
+	public ServerContext getServerHandler() {
+		return server;
+	}
+
+	public Connection getConnection() {
+		return conn;
+	}
+
+	public String getInetAddress() {
+		return conn.getInetAddress();
+	}
+
+	public String getRemoteAddress() {
+		return conn.getRemoteAddress();
+	}
+
+	public int getRemotePort() {
+		return conn.getRemotePort();
+	}
+
+	public boolean isClosed() {
+		return closed;
+	}
+
+	protected void setClosed(boolean bool) {
+		this.closed = bool;
 	}
 
 }

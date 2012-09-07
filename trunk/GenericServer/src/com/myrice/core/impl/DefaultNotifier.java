@@ -18,10 +18,14 @@ public class DefaultNotifier<R> implements Notifier<R> {
 		return listeners.isEmpty();
 	}
 
-	public void fireOnAccept() throws Exception {
+	public void fireOnAccept() {
 		int length = listeners.size();
-		for (int i = 0; i < length; i++)
-			listeners.get(i).onAccept();
+		try {
+			for (int i = 0; i < length; i++)
+				listeners.get(i).onAccept();
+		} catch (Throwable e) {
+			fireOnError(null, e);
+		}
 	}
 
 	public R fireOnAccepted(SelectableChannel sc, R prev) throws Exception {
@@ -33,29 +37,45 @@ public class DefaultNotifier<R> implements Notifier<R> {
 
 	public void fireOnClosed(R request) {
 		int length = listeners.size();
-		for (int i = 0; i < length; i++)
-			listeners.get(i).onClosed(request);
+		try {
+			for (int i = 0; i < length; i++)
+				listeners.get(i).onClosed(request);
+		} catch (Throwable e) {
+			fireOnError(request, e);
+		}
 	}
 
-	public void fireOnError(R request, Exception e) {
+	public void fireOnError(R request, Throwable e) {
 		int length = listeners.size();
-		for (int i = 0; i < length; i++)
-			listeners.get(i).onError(request, e);
+		try {
+			for (int i = 0; i < length; i++)
+				listeners.get(i).onError(request, e);
+		} catch (Throwable e1) {
+			e1.printStackTrace();
+		}
 	}
 
-	public boolean fireOnRead(R request) throws Exception {
+	public boolean fireOnRead(R request) {
 		boolean suc = false;
 		int length = listeners.size();
-		for (int i = 0; i < length; i++)
-			suc = listeners.get(i).onRead(request, suc);
+		try {
+			for (int i = 0; i < length; i++)
+				suc = listeners.get(i).onRead(request, suc);
+		} catch (Throwable e) {
+			fireOnError(request, e);
+		}
 		return suc;
 	}
 
-	public boolean fireOnWrite(R request) throws Exception {
+	public boolean fireOnWrite(R request) {
 		boolean bool = false;
 		int length = listeners.size();
-		for (int i = 0; i < length; i++)
-			bool = listeners.get(i).onWrite(request, bool);
+		try {
+			for (int i = 0; i < length; i++)
+				bool = listeners.get(i).onWrite(request, bool);
+		} catch (Throwable e) {
+			fireOnError(request, e);
+		}
 		return bool;
 	}
 

@@ -6,18 +6,13 @@ import com.myrice.filter.IFilterChain;
 
 public interface ServerContext extends Context {
 
-	Connector<Session> getConnector();
+	Connector<Connection> getConnector();
 
-	/**
-	 * 获取SessionContext
-	 * 
-	 * @param sid
-	 *            SessionId
-	 * @return 不可能返回null
-	 */
-	Context getSessionContext(String sid);
+	Session setSessionContext(String sid, Session session);
 
-	void removeSessionContext(String sid);
+	Session getSessionContext(String sid);
+
+	Session removeSessionContext(String sid);
 
 	MessageQueue createMessageQueue();
 
@@ -27,10 +22,10 @@ public interface ServerContext extends Context {
 
 	void execute(Runnable runnable);
 
-	Notifier<Session> getNotifier();
+	Notifier<Connection> getNotifier();
 
 	IFilterChain getFilterChain();
 
-	WriteRequest createWriteRequest();
+	WriteRequest createWriteRequest(Connection session);
 
 }
