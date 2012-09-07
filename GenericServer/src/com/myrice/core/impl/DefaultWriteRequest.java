@@ -2,33 +2,35 @@ package com.myrice.core.impl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.WritableByteChannel;
 
+import com.myrice.core.Connection;
 import com.myrice.core.MessageInput;
-import com.myrice.core.ServerContext;
-import com.myrice.core.Session;
 import com.myrice.core.WriteRequest;
 
 public class DefaultWriteRequest implements WriteRequest, Runnable {
 	// private static final Logger log = Logger
 	// .getLogger(DefaultWriteRequest.class);
 
-	private DefaultSession session;
+	private DefaultConnection conn;
 	private int count;
 
+	public DefaultWriteRequest(Connection session) {
+		init(session);
+	}
+
 	public void destroy() {
-		session = null;
+		conn = null;
 		count = 0;
 	}
 
-	public void init(Session session) {
-		this.session = (DefaultSession) session;
+	public void init(Connection session) {
+		this.conn = (DefaultConnection) session;
 	}
 
 	public void run() {
-		MessageInput queue = session.getMessageOutputQueue();
-		SocketChannel sc = session.getSocketChannel();
+		MessageInput queue = conn.getSession().getMessageOutputQueue();
+		WritableByteChannel sc = conn.getSocketChannel();
 		ByteBuffer out = null;
 		try {
 			// ---------- Send begin ---------
@@ -55,30 +57,29 @@ public class DefaultWriteRequest implements WriteRequest, Runnable {
 				sc.close();
 			} catch (IOException e1) {
 			} finally {
-				if (e instanceof ClosedChannelException) {
-					if (session.isClosed() == false) {
-						getServerHandler().getNotifier().fireOnClosed(session);
-					}
-				}
+				conn.getSession().getServerHandler().getConnector().wakeup();
+				// if (e instanceof ClosedChannelException) {
+				// if (session.isClosed() == false) {
+				// getServerHandler().getNotifier().fireOnClosed(session);
+				// }
+				// }
 			}
 		} finally {
 			synchronized (this) {
-				session.setBusy(false);// 全部发送完成，发送结束
+				conn.setBusy(false);// 全部发送完成，发送结束
 			}
 		}
 	}
 
-	private ServerContext getServerHandler() {
-		return session.getServerHandler();
-	}
-
 	public void flush() {
+		if (conn.isClosed())
+			return;
 		synchronized (this) {
-			if (session.isBusy())
+			if (conn.isBusy())
 				return;
-			session.setBusy(true);
+			conn.setBusy(true);
 		}
-		session.getServerHandler().execute(this);
+		conn.getSession().getServerHandler().execute(this);
 	}
 
 	public int getCount() {

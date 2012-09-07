@@ -87,9 +87,9 @@ public class DefaultFilterChain implements IFilterChain {
 			this.filter = filter;
 		}
 
-		public boolean find(IFilter filter2) {
-			// TODO Auto-generated method stub
-			return false;
+		public boolean find(IFilter filter) {
+			return this.filter == filter ? true : (hasNext() ? getNext().find(
+					filter) : false);
 		}
 
 		public ChainImpl(IFilter filter, ChainImpl next) {

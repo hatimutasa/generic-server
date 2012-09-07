@@ -1,6 +1,5 @@
 package com.myrice.core.impl;
 
-import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -88,32 +87,12 @@ public class DefaultMessageReader<R> implements MessageReader<R> {
 	@SuppressWarnings("unchecked")
 	protected void execute(SelectionKey key) {
 		R request = (R) key.attachment();
-		try {
-			if (notifier.fireOnRead(request))
-				connector.processWrite(key);// 读到完整报文，请求写
-			else
-				connector.processRead(key);// 不完整报文，继续读取
-		} catch (IOException e) {
-			try {
-				key.channel().close();
-			} catch (IOException e1) {
-			} finally {
-				notifier.fireOnClosed(request);
-			}
-		} catch (Exception e) {
-			try {
-				notifier.fireOnError(request, e);
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			} finally {
-				try {
-					key.channel().close();
-				} catch (IOException e1) {
-				} finally {
-					notifier.fireOnClosed(request);
-				}
-			}
-		}
+
+		if (notifier.fireOnRead(request))
+			connector.processWrite(key);// 读到完整报文，请求写
+		else
+			connector.processRead(key);// 不完整报文，继续读取
+
 	}
 
 	public void setExecutor(Executor executor) {

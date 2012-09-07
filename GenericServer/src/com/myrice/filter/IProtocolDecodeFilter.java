@@ -2,8 +2,8 @@ package com.myrice.filter;
 
 import java.nio.ByteBuffer;
 
+import com.myrice.core.Connection;
 import com.myrice.core.MessageOutput;
-import com.myrice.core.Session;
 import com.myrice.filter.IFilterChain.FilterChain;
 
 public interface IProtocolDecodeFilter extends IFilter {
@@ -17,7 +17,7 @@ public interface IProtocolDecodeFilter extends IFilter {
 	 * @param chain
 	 * @return 是否解码到一个完整消息
 	 */
-	boolean messageDecode(Session session, ByteBuffer in, MessageOutput out,
+	boolean messageDecode(Connection session, ByteBuffer in, MessageOutput out,
 			FilterChain<IProtocolDecodeFilter> chain);
 
 }

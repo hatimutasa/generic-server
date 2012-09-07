@@ -161,7 +161,7 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 		try {
 			request = notifier.fireOnAccepted(sc, request);// 必须先通知再请求读数据
 			addRegistor(sc, SelectionKey.OP_READ, request);
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			notifier.fireOnError(request, e);
 		}
 	}
@@ -198,7 +198,7 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 		// 处理接听套接字请求
 		while (queue4server.isEmpty() == false)
 			try {
-				addRegistor(queue4server.poll(), SelectionKey.OP_ACCEPT, null);
+				addRegistor(queue4server.poll(), SelectionKey.OP_ACCEPT, this);
 			} catch (Exception e) {
 				notifier.fireOnError(null, e);
 			}
@@ -213,20 +213,16 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 				request = (R) key.attachment();
 				addRegistor(key.channel(), ops, request);
 			} catch (Exception e) {
-				try {
-					notifier.fireOnClosed(request);
-				} catch (Exception e1) {
-					notifier.fireOnError(request, e1);
-				}
+				notifier.fireOnClosed(request);
 			}
 		}
 	}
 
-	private SelectionKey addRegistor(SelectableChannel channel, int ops, R req)
-			throws IOException {
+	private SelectionKey addRegistor(SelectableChannel channel, int ops,
+			Object attatch) throws IOException {
 		if (channel != null) {
 			channel.configureBlocking(false);
-			return channel.register(selector, ops, req);
+			return channel.register(selector, ops, attatch);
 		}
 		return null;
 	}
@@ -353,5 +349,11 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 
 	public ExecutorService getExecutor() {
 		return executer;
+	}
+
+	public void wakeup() {
+		if (selector != null) {
+			selector.wakeup();
+		}
 	}
 }

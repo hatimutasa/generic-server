@@ -13,11 +13,11 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
+import com.myrice.core.Connection;
 import com.myrice.core.Connector;
-import com.myrice.core.Context;
-import com.myrice.core.MessageQueue;
 import com.myrice.core.MessageInput;
 import com.myrice.core.MessageOutput;
+import com.myrice.core.MessageQueue;
 import com.myrice.core.Notifier;
 import com.myrice.core.ServerContext;
 import com.myrice.core.Session;
@@ -27,13 +27,13 @@ import com.myrice.filter.IAcceptorFilter;
 import com.myrice.filter.IClosedFilter;
 import com.myrice.filter.IErrFilter;
 import com.myrice.filter.IFilterChain;
-import com.myrice.filter.IMessageFilter;
 import com.myrice.filter.IFilterChain.IChain;
+import com.myrice.filter.IMessageFilter;
 import com.myrice.filter.IProtocolDecodeFilter;
 import com.myrice.filter.impl.DefaultFilterChain;
 import com.myrice.util.TimerManager;
 
-public class DefaultServerHandler extends ServerHandlerAdapter<Session>
+public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 		implements ServerContext {
 	protected final Logger log = Logger.getLogger(getClass());
 
@@ -45,12 +45,12 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Session>
 
 	private IFilterChain filterChain;
 
-	private Connector<Session> connector;
-	private Notifier<Session> notifier;
+	private Connector<Connection> connector;
+	private Notifier<Connection> notifier;
 	private ExecutorService executor;
 	private TimerManager timerManager;
 
-	public DefaultServerHandler(Connector<Session> connector) {
+	public DefaultServerHandler(Connector<Connection> connector) {
 		this.connector = connector;
 		this.notifier = connector.getNotifier();
 		this.executor = connector.getExecutor();
@@ -73,7 +73,7 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Session>
 		return executor;
 	}
 
-	public Notifier<Session> getNotifier() {
+	public Notifier<Connection> getNotifier() {
 		return notifier;
 	}
 
@@ -112,10 +112,11 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Session>
 				TimeUnit.MILLISECONDS);
 	}
 
-	public Connector<Session> getConnector() {
+	public Connector<Connection> getConnector() {
 		return connector;
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
 	public void onAccept() throws Exception {
 		IChain<IAcceptFilter> chain = (IChain<IAcceptFilter>) filterChain
@@ -125,8 +126,9 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Session>
 		}
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
-	public Session onAccepted(SelectableChannel request, Session prev)
+	public Connection onAccepted(SelectableChannel request, Connection prev)
 			throws Exception {
 		IChain<IAcceptorFilter> chain = (IChain<IAcceptorFilter>) filterChain
 				.getFirstChain(IFilterChain.FILTER_ACCEPTOR);
@@ -141,50 +143,57 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Session>
 		return prev;
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
-	public void onClosed(Session session) {
+	public void onClosed(Connection conn) {
 		IChain<IClosedFilter> chain = (IChain<IClosedFilter>) filterChain
 				.getFirstChain(IFilterChain.FILTER_CLOSED);
 		if (chain != null) {
-			chain.getFilter().sessionClosed(session, chain);
+			chain.getFilter().sessionClosed(conn, chain);
 		}
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
-	public void onError(Session session, Exception e) {
+	public void onError(Connection conn, Throwable e) {
 		IChain<IErrFilter> chain = (IChain<IErrFilter>) filterChain
 				.getFirstChain(IFilterChain.FILTER_ERROR);
 		if (chain != null) {
-			chain.getFilter().serverExcept(session, e, chain);
+			chain.getFilter().serverExcept(conn, e, chain);
 		}
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
-	public boolean onRead(Session session, boolean prev) throws Exception {
+	public boolean onRead(Connection conn, boolean prev) throws Exception {
 		IChain<IProtocolDecodeFilter> chain = (IChain<IProtocolDecodeFilter>) filterChain
 				.getFirstChain(IFilterChain.FILTER_PROTOCOL_DECODE);
 		if (chain != null) {
-			DefaultSession sc = (DefaultSession) session;
-			ByteBuffer buff = sc.onRead();
-			MessageOutput queue = sc.getMessageInputQueue();
-			return chain.getFilter().messageDecode(session, buff, queue, chain);
+			ByteBuffer buff = conn.read();
+			MessageOutput queue = conn.getSession().getMessageInputQueue();
+			return chain.getFilter().messageDecode(conn, buff, queue, chain);
 		}
 		return false;
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
-	public boolean onWrite(Session request, boolean prev) throws Exception {
+	public boolean onWrite(Connection conn, boolean prev) throws Exception {
 		IChain<IMessageFilter> chain = (IChain<IMessageFilter>) filterChain
 				.getFirstChain(IFilterChain.FILTER_MESSAGE);
 		if (chain != null) {
-			DefaultSession session = (DefaultSession) request;
+			DefaultSession session = (DefaultSession) conn.getSession();
 			MessageInput in = session.getMessageInputQueue();
 			for (; in.isEmpty() == false;) {
 				Object message = in.popMessage();
-				execute(newMessageTask(session, message, chain));
+				executeMessageTask(newMessageTask(session, message, chain));
 			}
 		}
 		return true;
+	}
+
+	protected void executeMessageTask(MessageTask messageTask) {
+		execute(messageTask);
 	}
 
 	private MessageTask newMessageTask(Session session, Object message,
@@ -200,7 +209,7 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Session>
 		return t;
 	}
 
-	private class MessageTask implements Runnable {
+	protected class MessageTask implements Runnable {
 		Session session;
 		Object message;
 		IChain<IMessageFilter> chain;
@@ -221,28 +230,34 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Session>
 		return filterChain;
 	}
 
-	public Context getSessionContext(String sid) {
-		Map<String, Context> map = getSessionContextMap();
-		Context context = map.get(sid);
-		if (context == null) {
-			context = new DefaultContext();
-			map.put(sid, context);
-		}
-		return context;
+	public Session setSessionContext(String sid, Session session) {
+		return getSessionContextMap().put(sid, session);
+	}
+
+	public Session getSessionContext(String sid) {
+		return getSessionContextMap().get(sid);
+	}
+
+	public Session removeSessionContext(String sid) {
+		return getSessionContextMap().remove(sid);
 	}
 
 	@SuppressWarnings("unchecked")
-	private Map<String, Context> getSessionContextMap() {
-		Map<String, Context> map = (Map<String, Context>) getAttribute(ATTR_SESSION_CONTEXT_MAP);
-		if (map == null) {
-			map = createSessionContextMap();
-			setAttribute(ATTR_SESSION_CONTEXT_MAP, map);
-		}
+	protected Map<String, Session> getSessionContextMap() {
+		Map<String, Session> map = (Map<String, Session>) getAttribute(ATTR_SESSION_CONTEXT_MAP);
+		if (map == null)
+			synchronized (this) {
+				map = (Map<String, Session>) getAttribute(ATTR_SESSION_CONTEXT_MAP);
+				if (map == null) {
+					map = createSessionContextMap();
+					setAttribute(ATTR_SESSION_CONTEXT_MAP, map);
+				}
+			}
 		return map;
 	}
 
-	protected Map<String, Context> createSessionContextMap() {
-		return new ConcurrentHashMap<String, Context>();
+	protected Map<String, Session> createSessionContextMap() {
+		return new ConcurrentHashMap<String, Session>();
 	}
 
 	public MessageQueue createMessageQueue() {
@@ -253,11 +268,8 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Session>
 		return new DefaultMessageQueue(capacity);
 	}
 
-	public WriteRequest createWriteRequest() {
-		return new DefaultWriteRequest();
+	public WriteRequest createWriteRequest(Connection session) {
+		return new DefaultWriteRequest(session);
 	}
 
-	public void removeSessionContext(String sid) {
-		getSessionContextMap().remove(sid);
-	}
 }

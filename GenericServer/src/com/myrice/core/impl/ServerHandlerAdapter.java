@@ -23,7 +23,7 @@ public class ServerHandlerAdapter<R> extends DefaultContext implements
 	public void onClosed(R request) {
 	}
 
-	public void onError(R request, Exception e) {
+	public void onError(R request, Throwable e) {
 		e.printStackTrace();
 	}
 
