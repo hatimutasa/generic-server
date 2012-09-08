@@ -91,6 +91,22 @@ public class DefaultSession extends DefaultContext implements Session {
 		return queue;
 	}
 
+	public Object getCoverAttributeOfUser(String name, Object def) {
+		if (contains(name))
+			return getAttribute(name);
+		if (getServerHandler().contains(name))
+			return getServerHandler().getAttribute(name);
+		return def;
+	}
+
+	public Object getCoverAttributeOfApp(String name, Object def) {
+		if (getServerHandler().contains(name))
+			return getServerHandler().getAttribute(name);
+		if (contains(name))
+			return getAttribute(name);
+		return def;
+	}
+
 	public ByteChannel getSocketChannel() {
 		return conn.getSocketChannel();
 	}

@@ -97,10 +97,8 @@ public class DefaultConnection extends POJO implements Connection {
 	}
 
 	private int getBufferCapacity() {
-		if (session.contains(Session.IO_BUFFER_CAPACITY)) {
-			return (Integer) session.getAttribute(Session.IO_BUFFER_CAPACITY);
-		}
-		return Session.CAPACITY;
+		return (Integer) session.getCoverAttributeOfUser(
+				Session.IO_BUFFER_CAPACITY, Session.CAPACITY);
 	}
 
 	private String getProtocol(ByteChannel sc) {
