@@ -37,8 +37,6 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 		implements ServerContext {
 	protected final Logger log = Logger.getLogger(getClass());
 
-	public static final String ATTR_SESSION_CONTEXT_MAP = "__SESSION_CONTEXT_MAP__";
-
 	public static final String ATTR_MAX_MESSATE_QUEUE_CAPACITY = "__MAX_MESSATE_QUEUE_CAPACITY__";
 
 	public static int MAX_MESSAGE_QUEUE_CAPACITY = 50;
@@ -242,15 +240,13 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 		return getSessionContextMap().remove(sid);
 	}
 
-	@SuppressWarnings("unchecked")
+	private Map<String, Session> map;
+
 	protected Map<String, Session> getSessionContextMap() {
-		Map<String, Session> map = (Map<String, Session>) getAttribute(ATTR_SESSION_CONTEXT_MAP);
 		if (map == null)
 			synchronized (this) {
-				map = (Map<String, Session>) getAttribute(ATTR_SESSION_CONTEXT_MAP);
 				if (map == null) {
 					map = createSessionContextMap();
-					setAttribute(ATTR_SESSION_CONTEXT_MAP, map);
 				}
 			}
 		return map;
