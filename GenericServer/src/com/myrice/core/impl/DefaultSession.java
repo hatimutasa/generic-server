@@ -50,16 +50,19 @@ public class DefaultSession extends DefaultContext implements Session {
 				.getFilterChain().getFirstChain(
 						IFilterChain.FILTER_PROTOCOL_ENCODE);
 
-		if (chain == null) {
+		if (chain == null)
 			throw new IllegalStateException(
 					"No configuration protocol encode filter.");
-		}
+
 		try {
 			MessageOutput output = getMessageOutputQueue();
+
 			chain.getFilter().messageEncode(conn, message, output, chain);
+
 		} catch (Throwable e) {
 			server.getNotifier().fireOnError(conn, e);
 		}
+
 	}
 
 	public String getSessionId() {
