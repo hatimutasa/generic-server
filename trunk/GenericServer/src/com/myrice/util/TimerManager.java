@@ -18,8 +18,7 @@ public class TimerManager {
 		if (executorService != null) {
 			executorService.shutdown();
 			try {
-				executorService.awaitTermination(keepAliveTime,
-						TimeUnit.SECONDS);
+				executorService.awaitTermination(10, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			} finally {
@@ -27,11 +26,6 @@ public class TimerManager {
 			}
 		}
 	}
-
-	private ScheduledThreadPoolExecutor executorService;
-	private int corePoolSize = 10;
-	private int maxPoolSize = 50;
-	private long keepAliveTime = 1200;
 
 	public int getCorePoolSize() {
 		return corePoolSize;
@@ -58,17 +52,39 @@ public class TimerManager {
 	private static TimerManager instance;
 
 	public void execute(Runnable run) {
-		executorService.execute(run);
+		executorService.execute(new Delegate(run));
 	}
 
 	public ScheduledFuture<?> schedule(Runnable run, long delay,
 			TimeUnit timeUnit) {
-		return executorService.schedule(run, delay, timeUnit);
+		return executorService.schedule(new Delegate(run), delay, timeUnit);
 	}
 
 	public ScheduledFuture<?> scheduleAtFixedRate(Runnable run, long delay,
 			long period, TimeUnit timeUnit) {
-		return executorService
-				.scheduleAtFixedRate(run, delay, period, timeUnit);
+		return executorService.scheduleAtFixedRate(new Delegate(run), delay,
+				period, timeUnit);
 	}
+
+	private class Delegate implements Runnable {
+		Runnable runnable;
+
+		public Delegate(Runnable runnable) {
+			this.runnable = runnable;
+		}
+
+		public void run() {
+			try {
+				runnable.run();
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+		}
+
+	}
+
+	private int corePoolSize = 10;
+	private int maxPoolSize = 50;
+	private long keepAliveTime = 1200;
+	private ScheduledThreadPoolExecutor executorService;
 }
