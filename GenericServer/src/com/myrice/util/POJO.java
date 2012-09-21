@@ -24,16 +24,16 @@ public abstract class POJO {
 	}
 
 	public static String toString(Object obj, Map<Object, Object> already) {
+		already.put(obj, null);
 		StringBuffer sb = new StringBuffer("{");
-
-		toString(obj, obj.getClass(), sb, already);
-
+		Map<Object, Object> thisAlready = new HashMap<Object, Object>();
+		toString(obj, obj.getClass(), sb, already, thisAlready);
 		sb.append("}");
 		return sb.toString();
 	}
 
 	public static void toString(Object obj, Class<?> clazz, StringBuffer sb,
-			Map<Object, Object> already) {
+			Map<Object, Object> already, Map<Object, Object> thisAlready) {
 		if (clazz == null)
 			return;
 		if (clazz.isArray() || clazz.isPrimitive()) {
@@ -49,36 +49,45 @@ public abstract class POJO {
 						&& method.getReturnType() != void.class
 						&& method.getModifiers() != Modifier.STATIC) {
 					name = method.getName();
-					if (already.containsKey(name) == false) {
-						already.put(name, null);
-						if (name.startsWith("get")) {
-							if ((value = method.invoke(obj)) != obj) {
-								if (value != null && already.containsKey(value)) {
-									continue;
-								}
-								already.put(value, null);
-								if (sb.length() > 1)
-									sb.append(", ");
-								sb.append(name.substring(3, 4).toLowerCase());
-								sb.append(name.substring(4));
-								sb.append("=");
-								appendValue(value, sb, already);
+
+					// 排除当前对象的重复方法
+					if (thisAlready.containsKey(name))
+						continue;
+					thisAlready.put(name, null);
+
+					if (name.startsWith("get")) {
+						if ((value = method.invoke(obj)) != obj) {
+							if (value != null && already.containsKey(value)) {
+								continue;
 							}
-						} else if (name.startsWith("is")
-								&& method.getReturnType() == boolean.class) {
-							if ((value = method.invoke(obj)) != obj) {
-								if (sb.length() > 1)
-									sb.append(", ");
-								sb.append(name.substring(2, 3).toLowerCase());
-								sb.append(name.substring(3));
-								sb.append("=");
+							if (value != null && value instanceof POJO) {
+								already.put(value, null);
+							}
+							if (sb.length() > 1)
+								sb.append(", ");
+							sb.append(name.substring(3, 4).toLowerCase());
+							sb.append(name.substring(4));
+							sb.append("=");
+							if (value == null) {
+								sb.append("null");
+							} else {
 								appendValue(value, sb, already);
 							}
 						}
+					} else if (name.startsWith("is")
+							&& (method.getReturnType() == boolean.class || method
+									.getReturnType() == Boolean.class)) {
+						value = method.invoke(obj);
+						if (sb.length() > 1)
+							sb.append(", ");
+						sb.append(name.substring(2, 3).toLowerCase());
+						sb.append(name.substring(3));
+						sb.append("=");
+						sb.append(value);
 					}
 				}
-			toString(obj, clazz.getSuperclass(), sb, already);
-			toString(obj, clazz.getInterfaces(), sb, already);
+			toString(obj, clazz.getSuperclass(), sb, already, thisAlready);
+			toString(obj, clazz.getInterfaces(), sb, already, thisAlready);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -133,7 +142,9 @@ public abstract class POJO {
 			} else {
 				sb.append(value.toString());
 			}
-		} else if (!(value instanceof POJO)) {
+		} else if (value instanceof POJO) {
+			sb.append(toString(value, already));
+		} else {
 			sb.append(value);
 		}
 		if (flag)
@@ -141,9 +152,9 @@ public abstract class POJO {
 	}
 
 	public static void toString(Object obj, Class<?>[] clases, StringBuffer sb,
-			Map<Object, Object> already) {
+			Map<Object, Object> already, Map<Object, Object> thisAlready) {
 		for (Class<?> clazz : clases)
-			toString(obj, clazz, sb, already);
+			toString(obj, clazz, sb, already, thisAlready);
 	}
 
 }
