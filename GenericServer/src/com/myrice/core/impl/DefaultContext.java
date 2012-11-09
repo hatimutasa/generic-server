@@ -16,6 +16,14 @@ import com.myrice.util.POJO;
 public class DefaultContext extends POJO implements Remote, Context {
 	private Map<String, Object> context = new HashMap<String, Object>(1);
 
+	public Object getAttribute(String name, Object defaultValue) {
+		synchronized (context) {
+			if (context.containsKey(name))
+				return context.get(name);
+		}
+		return defaultValue;
+	}
+
 	public Object getAttribute(String name) {
 		synchronized (context) {
 			return context.get(name);
