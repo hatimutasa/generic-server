@@ -6,6 +6,8 @@ public interface Context {
 
 	Object getAttribute(String name);
 
+	Object getAttribute(String name, Object defaultValue);
+
 	Object removeAttribute(String name);
 
 	boolean contains(String name);
