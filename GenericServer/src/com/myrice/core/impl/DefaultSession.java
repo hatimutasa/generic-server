@@ -3,6 +3,8 @@ package com.myrice.core.impl;
 import java.nio.channels.ByteChannel;
 import java.util.UUID;
 
+import org.apache.log4j.Logger;
+
 import com.myrice.core.AccessException;
 import com.myrice.core.Connection;
 import com.myrice.core.MessageOutput;
@@ -14,7 +16,7 @@ import com.myrice.filter.IFilterChain.IChain;
 import com.myrice.filter.IProtocolEncodeFilter;
 
 public class DefaultSession extends DefaultContext implements Session {
-	// private static final Logger log = Logger.getLogger(DefaultSession.class);
+	private static final Logger log = Logger.getLogger(DefaultSession.class);
 
 	private ServerContext server;
 	protected Connection conn;
@@ -43,6 +45,11 @@ public class DefaultSession extends DefaultContext implements Session {
 
 	@SuppressWarnings("unchecked")
 	public void send(Object message) {
+		if (server.getConnector().isRuning() == false) {
+			log.warn(this.getInetAddress()
+					+ " send msg failure,  Server is stoped!");
+			return;
+		}
 		if (server == null)
 			throw new AccessException("session is destory!");
 
@@ -50,10 +57,10 @@ public class DefaultSession extends DefaultContext implements Session {
 				.getFilterChain().getFirstChain(
 						IFilterChain.FILTER_PROTOCOL_ENCODE);
 
-		if (chain == null)
+		if (chain == null) {
 			throw new IllegalStateException(
 					"No configuration protocol encode filter.");
-
+		}
 		try {
 			MessageOutput output = getMessageOutputQueue();
 
