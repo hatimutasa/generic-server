@@ -1,6 +1,7 @@
 package com.myrice.core.impl;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -15,6 +16,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.myrice.core.AccessException;
+import com.myrice.core.Connection;
 import com.myrice.core.Connector;
 import com.myrice.core.MessageReader;
 import com.myrice.core.MessageWriter;
@@ -118,12 +120,19 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 							} else if (key.isAcceptable()) {
 								notifier.fireOnAccept();
 								ss = ((ServerSocketChannel) key.channel());
-								accept4server(ss.accept());
+								if (ss.isOpen()) {
+									accept4server(ss.accept());
+								} else {
+									key.channel();
+								}
 							}
 						} else {
 							key.cancel();
-							notifier.fireOnClosed((R) key.attachment());
+							if (key.attachment() instanceof Connection) {
+								notifier.fireOnClosed((R) key.attachment());
+							}
 						}
+					} catch (CancelledKeyException e) {
 					} catch (Exception e) {
 						notifier.fireOnError(null, e);
 					}
@@ -137,15 +146,19 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 	}
 
 	protected void destory() {
+		closeChannels();
+
+		notifier.destory();
 		reader.destory();
 		writer.destory();
-		notifier.destory();
-		executer.shutdown();
+
 		try {
+			executer.shutdown();
 			executer.awaitTermination(10L, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		closeSelector();
 	}
 
 	protected void init() {
@@ -260,27 +273,41 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		onStop();
+	}
+
+	protected void onStop() {
 		try {
 			executer.shutdown();
 			executer.awaitTermination(10L, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		closeSelector();
+	}
+
+	@SuppressWarnings("unchecked")
+	public void closeChannels() {
+		// 关闭所有注册的键
+		Iterator<SelectionKey> keys = selector.keys().iterator();
+		while (keys.hasNext())
+			try {
+				SelectionKey key = keys.next();
+				key.cancel();
+				try {
+					key.channel().close();
+				} catch (Throwable e) {
+				} finally {
+					Object attach = key.attachment();
+					if (attach != null && attach instanceof Connection) {
+						notifier.fireOnClosed((R) attach);
+					}
+				}
+			} catch (Throwable e) {
+				notifier.fireOnError(null, e);
+			}
 	}
 
 	protected void closeSelector() {
-		// 关闭所有注册的键
-		Iterator<SelectionKey> keys = selector.keys().iterator();
-		while (keys.hasNext()) {
-			SelectionKey key = keys.next();
-			try {
-				key.channel().close();
-			} catch (IOException e) {
-			} finally {
-				key.cancel();
-			}
-		}
 		try {
 			selector.close();
 		} catch (IOException e) {
