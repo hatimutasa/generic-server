@@ -53,7 +53,7 @@ public interface Session extends Context {
 	 *            默认值
 	 * @return
 	 */
-	Object getCoverAttributeOfUser(String name, Object def);
+	Object getCoverAttributeOfUser(Object key, Object def);
 
 	/**
 	 * 获取应用程序覆盖属性，优先级 application -> session
@@ -64,5 +64,5 @@ public interface Session extends Context {
 	 *            默认值
 	 * @return
 	 */
-	Object getCoverAttributeOfApp(String name, Object def);
+	Object getCoverAttributeOfApp(Object key, Object def);
 }
