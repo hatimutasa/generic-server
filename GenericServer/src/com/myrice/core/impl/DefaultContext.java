@@ -1,6 +1,8 @@
 package com.myrice.core.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.myrice.core.Context;
@@ -52,8 +54,13 @@ public class DefaultContext extends POJO implements Remote, Context {
 
 	public String[] getAttributeNames() {
 		synchronized (context) {
-			String[] names = new String[context.size()];
-			return context.keySet().toArray(names);
+			List<String> list = new ArrayList<String>();
+			for (Object key : context.keySet())
+				if (key instanceof String) {
+					list.add((String) key);
+				}
+			String[] names = new String[list.size()];
+			return list.toArray(names);
 		}
 	}
 
