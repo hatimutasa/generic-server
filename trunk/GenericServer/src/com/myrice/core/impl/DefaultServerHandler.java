@@ -216,6 +216,9 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 			chain.getFilter().messageReceived(session, message, chain);
 
 			// 自动回收复用
+			session = null;
+			message = null;
+			chain = null;
 			queue.offer(this);
 		}
 
