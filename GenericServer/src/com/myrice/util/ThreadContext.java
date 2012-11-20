@@ -45,8 +45,10 @@ public final class ThreadContext {
 		return context.containsKey(Thread.currentThread());
 	}
 
-	public static final void init() {
-		context.put(Thread.currentThread(), createContext());
+	public static final Map<Object, Object> init() {
+		Map<Object, Object> map = createContext();
+		context.put(Thread.currentThread(), map);
+		return map;
 	}
 
 	private static Map<Object, Object> createContext() {
