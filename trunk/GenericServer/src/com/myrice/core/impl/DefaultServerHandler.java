@@ -41,6 +41,8 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 
 	public static int MAX_MESSAGE_QUEUE_CAPACITY = 50;
 
+	private Map<String, Session> cachedSessionsMap;
+	
 	private IFilterChain filterChain;
 
 	private Connector<Connection> connector;
@@ -243,16 +245,14 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 		return getSessionContextMap().remove(sid);
 	}
 
-	private Map<String, Session> map;
-
 	protected Map<String, Session> getSessionContextMap() {
-		if (map == null)
+		if (cachedSessionsMap == null)
 			synchronized (this) {
-				if (map == null) {
-					map = createSessionContextMap();
+				if (cachedSessionsMap == null) {
+					cachedSessionsMap = createSessionContextMap();
 				}
 			}
-		return map;
+		return cachedSessionsMap;
 	}
 
 	protected Map<String, Session> createSessionContextMap() {

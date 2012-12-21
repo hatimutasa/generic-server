@@ -77,7 +77,9 @@ public class DefaultSession extends DefaultContext implements Session {
 	}
 
 	public void setSessionId(String sessionId) {
+		// 设置新Session
 		getServerHandler().setSessionContext(sessionId, this);
+		// 移除旧Session
 		getServerHandler().removeSessionContext(getSessionId());
 
 		this.sessionId = sessionId;
