@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
+import org.apache.log4j.Logger;
+
 import com.myrice.core.Connection;
 import com.myrice.core.MessageInput;
 import com.myrice.core.WriteRequest;
@@ -53,6 +55,7 @@ public class DefaultWriteRequest implements WriteRequest, Runnable {
 			// ----------- Send end ----------
 		} catch (IOException e) {
 			try {
+				//e.printStackTrace();
 				out.position(0);// 发送失败，复位，等待重连发送
 				sc.close();
 			} catch (IOException e1) {
@@ -72,11 +75,17 @@ public class DefaultWriteRequest implements WriteRequest, Runnable {
 	}
 
 	public void flush() {
-		if (conn.isClosed())
+		if (conn.isClosed()) {
+			log.warn("flush invalid, Connect[" + conn.getInetAddress()
+					+ "] is closed!");
 			return;
+		}
 		synchronized (this) {
-			if (conn.isBusy())
+			if (conn.isBusy()) {
+				log.warn("already flush, Connect[" + conn.getInetAddress()
+						+ "] is writing msg!");
 				return;
+			}
 			conn.setBusy(true);
 		}
 		conn.getSession().getServerHandler().execute(this);
@@ -85,4 +94,7 @@ public class DefaultWriteRequest implements WriteRequest, Runnable {
 	public int getCount() {
 		return count;
 	}
+
+	private static final Logger log = Logger
+			.getLogger(DefaultWriteRequest.class);
 }

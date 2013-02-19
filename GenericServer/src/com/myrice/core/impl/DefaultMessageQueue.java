@@ -38,6 +38,11 @@ public class DefaultMessageQueue implements MessageQueue {
 		return queue.isEmpty();
 	}
 
+	@Override
+	public int size() {
+		return queue.size();
+	}
+
 	public Object message() {
 		return queue.element();
 	}
