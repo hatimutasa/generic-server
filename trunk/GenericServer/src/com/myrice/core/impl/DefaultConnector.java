@@ -123,7 +123,7 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 								if (ss.isOpen()) {
 									accept4server(ss.accept());
 								} else {
-									key.channel();
+									key.cancel();
 								}
 							}
 						} else {
