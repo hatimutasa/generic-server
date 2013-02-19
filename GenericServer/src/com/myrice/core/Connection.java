@@ -27,6 +27,20 @@ public interface Connection {
 	int getRemotePort();
 
 	/**
+	 * 获取本地地址
+	 * 
+	 * @return
+	 */
+	String getLocalAddress();
+
+	/**
+	 * 获取本地端口
+	 * 
+	 * @return
+	 */
+	int getLocalPort();
+
+	/**
 	 * 关闭
 	 */
 	void close();

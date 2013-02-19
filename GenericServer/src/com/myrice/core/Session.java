@@ -38,6 +38,10 @@ public interface Session extends Context {
 
 	int getRemotePort();
 
+	String getLocalAddress();
+
+	int getLocalPort();
+
 	Connection getConnection();
 
 	MessageQueue getMessageInputQueue();
