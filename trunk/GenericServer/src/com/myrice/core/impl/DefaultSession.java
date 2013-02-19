@@ -147,6 +147,16 @@ public class DefaultSession extends DefaultContext implements Session {
 		return conn.getRemotePort();
 	}
 
+	@Override
+	public String getLocalAddress() {
+		return conn.getLocalAddress();
+	}
+
+	@Override
+	public int getLocalPort() {
+		return conn.getLocalPort();
+	}
+
 	public boolean isClosed() {
 		return closed;
 	}

@@ -1,6 +1,8 @@
 package com.myrice.core.impl;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.DatagramChannel;
@@ -16,9 +18,13 @@ public class DefaultConnection extends POJO implements Connection {
 
 	protected ByteChannel channel;
 
+	private String localAddress;
+	private int localPort;
+
 	private String protocol;
 	private String address;
 	private int port;
+
 	private String inetAddress;
 
 	private Session session;
@@ -33,8 +39,10 @@ public class DefaultConnection extends POJO implements Connection {
 	public void init(ByteChannel sc) {
 		this.channel = sc;
 		this.protocol = getProtocol(sc);
-		this.address = getAddress(sc);
-		this.port = getPort(sc);
+		this.address = getAddress(sc, true);
+		this.port = getPort(sc, true);
+		this.localAddress = getAddress(sc, false);
+		this.localPort = getPort(sc, false);
 		this.closed = false;
 	}
 
@@ -111,24 +119,28 @@ public class DefaultConnection extends POJO implements Connection {
 		return "Unkown";
 	}
 
-	private int getPort(ByteChannel sc) {
+	private int getPort(ByteChannel sc, boolean remote) {
 		if (sc instanceof DatagramChannel) {
-			return ((DatagramChannel) sc).socket().getPort();
+			DatagramSocket sock = ((DatagramChannel) sc).socket();
+			return remote ? sock.getPort() : sock.getLocalPort();
 		}
 		if (sc instanceof SocketChannel) {
-			return ((SocketChannel) sc).socket().getPort();
+			Socket sock = ((SocketChannel) sc).socket();
+			return remote ? sock.getPort() : sock.getLocalPort();
 		}
 		return 0;
 	}
 
-	private String getAddress(ByteChannel sc) {
+	private String getAddress(ByteChannel sc, boolean remote) {
 		if (sc instanceof DatagramChannel) {
-			return ((DatagramChannel) sc).socket().getInetAddress()
-					.getHostAddress();
+			DatagramSocket sock = ((DatagramChannel) sc).socket();
+			return remote ? sock.getInetAddress().getHostAddress() : sock
+					.getLocalAddress().getHostAddress();
 		}
 		if (sc instanceof SocketChannel) {
-			return ((SocketChannel) sc).socket().getInetAddress()
-					.getHostAddress();
+			Socket sock = ((SocketChannel) sc).socket();
+			return remote ? sock.getInetAddress().getHostAddress() : sock
+					.getLocalAddress().getHostAddress();
 		}
 		return null;
 	}
@@ -174,6 +186,16 @@ public class DefaultConnection extends POJO implements Connection {
 
 	public int getRemotePort() {
 		return port;
+	}
+
+	@Override
+	public String getLocalAddress() {
+		return localAddress;
+	}
+
+	@Override
+	public int getLocalPort() {
+		return localPort;
 	}
 
 	public ByteChannel getSocketChannel() {
