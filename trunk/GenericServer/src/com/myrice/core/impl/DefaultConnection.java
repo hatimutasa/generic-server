@@ -53,7 +53,7 @@ public class DefaultConnection extends POJO implements Connection {
 
 	public void onClosed() {
 		closed = true;
-		clearRecvByteBuffer();
+		clearRecvBuffer();
 	}
 
 	public WriteRequest getWriteRequest() {
@@ -74,7 +74,7 @@ public class DefaultConnection extends POJO implements Connection {
 		while ((size = sc.read(buff)) > 0) {
 			if (buff.remaining() == 0) {
 				ByteBuffer tmp = buff;
-				buff = ByteBuffer.allocate((int) (tmp.capacity() * 1.75));
+				buff = ByteBuffer.allocate((int) (tmp.capacity() * 1.75));// 1.75倍自增
 				buff.put((ByteBuffer) tmp.flip());
 				setInputBuffer(buff);
 			}
@@ -202,9 +202,8 @@ public class DefaultConnection extends POJO implements Connection {
 		return channel;
 	}
 
-	public void clearRecvByteBuffer() {
-		if (recvBuffer != null)
-			recvBuffer.clear();
+	public void clearRecvBuffer() {
+		recvBuffer = null;
 	}
 
 }

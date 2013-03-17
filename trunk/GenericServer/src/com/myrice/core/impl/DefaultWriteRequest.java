@@ -3,96 +3,145 @@ package com.myrice.core.impl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 import org.apache.log4j.Logger;
 
 import com.myrice.core.Connection;
 import com.myrice.core.MessageInput;
+import com.myrice.core.ServerContext;
+import com.myrice.core.Session;
 import com.myrice.core.WriteRequest;
 
 public class DefaultWriteRequest implements WriteRequest, Runnable {
-	// private static final Logger log = Logger
-	// .getLogger(DefaultWriteRequest.class);
+	private ServerContext context;
+	private Connection conn;
 
-	private DefaultConnection conn;
-	private int count;
+	private BlockingQueue<Session> flushQueue;
 
-	public DefaultWriteRequest(Connection session) {
-		init(session);
+	private int packetCount;
+	private long nanoTime;
+	private int byteCount;
+
+	public DefaultWriteRequest(Connection conn) {
+		init(conn);
 	}
 
 	public void destroy() {
+		if (flushQueue != null)
+			flushQueue.clear();
+		flushQueue = null;
 		conn = null;
-		count = 0;
+		context = null;
 	}
 
-	public void init(Connection session) {
-		this.conn = (DefaultConnection) session;
+	public void init(Connection conn) {
+		this.conn = conn;
+		this.context = conn.getSession().getServerHandler();
+		this.flushQueue = new ArrayBlockingQueue<Session>(10);
+		this.byteCount = 0;
+		this.nanoTime = 0;
 	}
 
 	public void run() {
-		MessageInput queue = conn.getSession().getMessageOutputQueue();
 		WritableByteChannel sc = conn.getSocketChannel();
-		ByteBuffer out = null;
+		Session session = null;
+		MessageInput q = null;
+		ByteBuffer p = null;
+		boolean nomal = false;
+		long times;
 		try {
 			// ---------- Send begin ---------
-			for (; queue.isEmpty() == false;) {
-				out = (ByteBuffer) queue.message();
+			for (; (session = flushQueue.poll()) != null;) {
+				q = session.getMessageOutputQueue();
+				for (; !q.isEmpty();) {
+					p = (ByteBuffer) q.getFirst();
 
-				int size = sc.write(out);
-				count += size;
+					times = System.nanoTime();
+					byteCount += sc.write(p);
+					times = System.nanoTime() - times;
+					nanoTime += times;
 
-				if (out.remaining() == 0) {
-					queue.popMessage();// 移除已发送数据包
-				} else {
-					try {
-						Thread.sleep(10);// 网速不佳，延迟
-					} catch (InterruptedException e) {
-						e.printStackTrace();
+					if (p.remaining() == 0) {
+						packetCount++;
+						q.removeFirst();// 移除已发送数据包
+					} else {
+						try {
+							Thread.sleep(10);// 网速不佳，延迟发送
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 					}
 				}
 			}
+			nomal = true;
 			// ----------- Send end ----------
 		} catch (IOException e) {
+			p.position(0);// 发送失败，复位，等待重连发送
+			// e.printStackTrace();
 			try {
-				//e.printStackTrace();
-				out.position(0);// 发送失败，复位，等待重连发送
 				sc.close();
 			} catch (IOException e1) {
 			} finally {
-				conn.getSession().getServerHandler().getConnector().wakeup();
-				// if (e instanceof ClosedChannelException) {
-				// if (session.isClosed() == false) {
-				// getServerHandler().getNotifier().fireOnClosed(session);
-				// }
-				// }
+				context.getConnector().wakeup();
 			}
 		} finally {
 			synchronized (this) {
-				conn.setBusy(false);// 全部发送完成，发送结束
+				if (nomal && this.flushQueue.size() > 0)
+					context.execute(this);// 队列没有发送完，继续发送
+				else
+					conn.setBusy(false);// 全部发送完成，发送结束
 			}
 		}
 	}
 
-	public void flush() {
+	public void flush(Session session) {
 		if (conn.isClosed()) {
-			log.warn("flush invalid, Connect[" + conn.getInetAddress()
+			log.warn("flush invalid, Connect [" + conn.getInetAddress()
 					+ "] is closed!");
+			Thread.dumpStack();
 			return;
 		}
-		synchronized (this) {
-			if (conn.isBusy()) {
-				log.warn("already flush, Connect[" + conn.getInetAddress()
-						+ "] is writing msg!");
-				return;
-			}
-			conn.setBusy(true);
+		if (session.getConnection() != conn) {
+			log.warn("flush invalid, Connect [" + conn.getInetAddress()
+					+ "] and [" + session.getConnection().getInetAddress()
+					+ "] is distinct!!!");
+			Thread.dumpStack();
+			return;
 		}
-		conn.getSession().getServerHandler().execute(this);
+		if (!flushQueue.contains(session)) {
+			try {
+				flushQueue.put(session);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} else {
+//			log.debug("Already add session flush queue: "
+//					+ session.getSessionId() + " , outputQueue: "
+//					+ session.getMessageOutputQueue().size());
+		}
+		synchronized (this) {
+			if (!conn.isBusy()) {
+				conn.setBusy(true);
+				context.execute(this);
+			} else {
+//				log.warn("Already flush, Connect[" + conn.getInetAddress()
+//						+ "] is writing busy!");
+			}
+		}
 	}
 
-	public int getCount() {
-		return count;
+	public int getByteCount() {
+		return byteCount;
+	}
+
+	public long getNanoTime() {
+		return nanoTime;
+	}
+
+	public int getPacketCount() {
+		return packetCount;
 	}
 
 	private static final Logger log = Logger

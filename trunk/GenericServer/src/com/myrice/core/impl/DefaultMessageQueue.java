@@ -17,7 +17,7 @@ public class DefaultMessageQueue implements MessageQueue {
 		queue = new ArrayBlockingQueue<Object>(capacity);
 	}
 
-	public Object popMessage() {
+	public Object removeFirst() {
 		try {
 			return queue.take();
 		} catch (InterruptedException e) {
@@ -26,7 +26,7 @@ public class DefaultMessageQueue implements MessageQueue {
 		return null;
 	}
 
-	public void putMessage(Object message) {
+	public void putLast(Object message) {
 		try {
 			queue.put(message);
 		} catch (InterruptedException e) {
@@ -43,7 +43,7 @@ public class DefaultMessageQueue implements MessageQueue {
 		return queue.size();
 	}
 
-	public Object message() {
+	public Object getFirst() {
 		return queue.element();
 	}
 
@@ -51,9 +51,9 @@ public class DefaultMessageQueue implements MessageQueue {
 		return queue.size() >= capacity;
 	}
 
-	public void putMessageAll(Collection<Object> list) {
+	public void putLastAll(Collection<Object> list) {
 		for (Iterator<Object> iterator = list.iterator(); iterator.hasNext();) {
-			putMessage(iterator.next());
+			putLast(iterator.next());
 		}
 	}
 

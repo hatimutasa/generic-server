@@ -133,6 +133,10 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 							}
 						}
 					} catch (CancelledKeyException e) {
+						if (key.attachment() instanceof Connection) {
+							notifier.fireOnClosed((R) key.attachment());
+						}
+						e.printStackTrace();
 					} catch (Exception e) {
 						notifier.fireOnError(null, e);
 					}

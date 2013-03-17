@@ -1,18 +1,26 @@
 package com.myrice.core;
 
+import java.nio.channels.ByteChannel;
+import java.util.Collection;
 import java.util.concurrent.ScheduledFuture;
 
 import com.myrice.filter.IFilterChain;
 
 public interface ServerContext extends Context {
 
+	Collection<Connection> getConnections();
+
+	Connection getConnection(ByteChannel sc);
+
 	Connector<Connection> getConnector();
 
-	Session setSessionContext(String sid, Session session);
+	Session createSession(Connection conn, Object sid);
 
-	Session getSessionContext(String sid);
+	Session addSession(Session session);
 
-	Session removeSessionContext(String sid);
+	Session getSession(String sid);
+
+	Session removeSession(String sid);
 
 	MessageQueue createMessageQueue();
 

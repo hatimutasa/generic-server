@@ -1,7 +1,6 @@
 package com.myrice.core.impl;
 
 import java.nio.channels.ByteChannel;
-import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
@@ -16,20 +15,22 @@ import com.myrice.filter.IFilterChain.IChain;
 import com.myrice.filter.IProtocolEncodeFilter;
 
 public class DefaultSession extends DefaultContext implements Session {
+
 	private static final Logger log = Logger.getLogger(DefaultSession.class);
+
+	private boolean closed;
 
 	private ServerContext server;
 	protected Connection conn;
 
-	private boolean closed;
+	protected String sessionId;
 
-	String sessionId;
-	{
-		sessionId = UUID.randomUUID().toString();
+	public DefaultSession(String sessionId) {
+		this.sessionId = sessionId;
 	}
 
 	public void flush() {
-		conn.getWriteRequest().flush();
+		conn.getWriteRequest().flush(this);
 	}
 
 	public void init(ServerContext server) {
@@ -38,9 +39,6 @@ public class DefaultSession extends DefaultContext implements Session {
 
 	public void init(Connection conn) {
 		this.conn = conn;
-		if (conn instanceof DefaultConnection) {
-			((DefaultConnection) conn).setSession(this);
-		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -77,12 +75,15 @@ public class DefaultSession extends DefaultContext implements Session {
 	}
 
 	public void setSessionId(String sessionId) {
-		// 设置新Session
-		getServerHandler().setSessionContext(sessionId, this);
-		// 移除旧Session
-		getServerHandler().removeSessionContext(getSessionId());
+		if (sessionId.equals(this.sessionId))
+			return;
 
+		// 移除旧Session
+		getServerHandler().removeSession(getSessionId());
+
+		// 设置新Session
 		this.sessionId = sessionId;
+		getServerHandler().addSession(this);
 	}
 
 	public MessageQueue getMessageOutputQueue() {
