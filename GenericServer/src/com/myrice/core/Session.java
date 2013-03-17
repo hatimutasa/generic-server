@@ -69,4 +69,7 @@ public interface Session extends Context {
 	 * @return
 	 */
 	Object getCoverAttributeOfApp(Object key, Object def);
+
+	void close();
+
 }

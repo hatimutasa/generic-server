@@ -3,7 +3,9 @@ package com.myrice.core.impl;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.SelectableChannel;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -84,6 +86,24 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 		timerManager.destory();
 	}
 
+	@Override
+	public int getSessionCount() {
+		return getSessionContextMap().size();
+	}
+
+	public List<Session> getSessions() {
+		return new ArrayList<Session>(getSessionContextMap().values());
+	}
+
+	@Override
+	public String[] getSessionIds() {
+		List<Session> list = this.getSessions();
+		String[] ids = new String[list.size()];
+		for (int i = 0; i < ids.length; i++)
+			ids[i] = list.get(i).getSessionId();
+		return ids;
+	}
+
 	public SessionFactory getSessionFactory() {
 		return sessionFactory;
 	}
@@ -106,6 +126,11 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 			return;
 		}
 		executor.execute(run);
+	}
+
+	@Override
+	public void execute(Runnable run, long delay) {
+		schedule(run, delay);
 	}
 
 	/**
@@ -305,6 +330,16 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 	}
 
 	protected void onSessionOpened(Session session) {
+		Session session0 = getSession(session.getSessionId());
+		if (session0 != null && session0 != session) {
+			session.close();
+			throw new RuntimeException("Already exists sessionId: "
+					+ session.getSessionId() + "  Connection: "
+					+ session.getInetAddress() + "  =>  "
+					+ session0.getInetAddress()
+
+			);
+		}
 		addSession(session);// 暂存Sesssion
 	}
 

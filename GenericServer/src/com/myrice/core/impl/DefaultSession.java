@@ -29,6 +29,12 @@ public class DefaultSession extends DefaultContext implements Session {
 		this.sessionId = sessionId;
 	}
 
+	@Override
+	public void close() {
+		if (conn != null)
+			conn.close();
+	}
+
 	public void flush() {
 		conn.getWriteRequest().flush(this);
 	}
