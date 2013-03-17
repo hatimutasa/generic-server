@@ -4,9 +4,9 @@ import java.util.Collection;
 
 public interface MessageOutput {
 
-	void putMessage(Object message);
+	void putLast(Object message);
 
-	void putMessageAll(Collection<Object> msg);
+	void putLastAll(Collection<Object> msg);
 
 	boolean isFulled();
 }

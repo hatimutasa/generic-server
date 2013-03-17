@@ -1,7 +1,9 @@
 package com.myrice.core.impl;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
 import java.nio.channels.SelectableChannel;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -21,6 +23,7 @@ import com.myrice.core.MessageQueue;
 import com.myrice.core.Notifier;
 import com.myrice.core.ServerContext;
 import com.myrice.core.Session;
+import com.myrice.core.SessionFactory;
 import com.myrice.core.WriteRequest;
 import com.myrice.filter.IAcceptFilter;
 import com.myrice.filter.IAcceptorFilter;
@@ -41,8 +44,11 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 
 	public static int MAX_MESSAGE_QUEUE_CAPACITY = 50;
 
+	private SessionFactory sessionFactory;
+
+	private Map<ByteChannel, Connection> connections;
 	private Map<String, Session> cachedSessionsMap;
-	
+
 	private IFilterChain filterChain;
 
 	private Connector<Connection> connector;
@@ -56,17 +62,34 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 		this.executor = connector.getExecutor();
 		this.timerManager = new TimerManager();
 		this.filterChain = new DefaultFilterChain();
+		this.connections = new ConcurrentHashMap<ByteChannel, Connection>();
+
 		this.notifier.addHandler(this);
 	}
 
 	@Override
 	public void init() {
+		sessionFactory = instanceSessionFactory();
+
 		timerManager.init();
+
+	}
+
+	public SessionFactory instanceSessionFactory() {
+		return new DefaultSessionFactory();
 	}
 
 	@Override
 	public void destory() {
 		timerManager.destory();
+	}
+
+	public SessionFactory getSessionFactory() {
+		return sessionFactory;
+	}
+
+	public void setSessionFactory(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
 	}
 
 	public Executor getExecutor() {
@@ -128,24 +151,27 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Connection onAccepted(SelectableChannel request, Connection prev)
+	public Connection onAccepted(SelectableChannel request, Connection conn)
 			throws Exception {
 		IChain<IAcceptorFilter> chain = (IChain<IAcceptorFilter>) filterChain
 				.getFirstChain(IFilterChain.FILTER_ACCEPTOR);
 		if (chain != null) {
-			if (prev == null) {
-				prev = chain.getFilter().sessionAccept(this, request, chain);
+			if (conn == null) {
+				conn = chain.getFilter().sessionAccept(this, request, chain);
 			}
-			if (prev != null) {
-				prev = chain.getFilter().sessionOpened(this, prev, chain);
+			if (conn != null) {
+				conn = chain.getFilter().sessionOpened(this, conn, chain);
+				connections.put(conn.getSocketChannel(), conn);
 			}
 		}
-		return prev;
+		return conn;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public void onClosed(Connection conn) {
+		connections.remove(conn.getSocketChannel());
+
 		IChain<IClosedFilter> chain = (IChain<IClosedFilter>) filterChain
 				.getFirstChain(IFilterChain.FILTER_CLOSED);
 		if (chain != null) {
@@ -185,7 +211,7 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 			DefaultSession session = (DefaultSession) conn.getSession();
 			MessageInput in = session.getMessageInputQueue();
 			for (; in.isEmpty() == false;) {
-				Object message = in.popMessage();
+				Object message = in.removeFirst();
 				executeMessageTask(newMessageTask(session, message, chain));
 			}
 		}
@@ -233,15 +259,15 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 		return filterChain;
 	}
 
-	public Session setSessionContext(String sid, Session session) {
-		return getSessionContextMap().put(sid, session);
+	public Session addSession(Session session) {
+		return getSessionContextMap().put(session.getSessionId(), session);
 	}
 
-	public Session getSessionContext(String sid) {
+	public Session getSession(String sid) {
 		return getSessionContextMap().get(sid);
 	}
 
-	public Session removeSessionContext(String sid) {
+	public Session removeSession(String sid) {
 		return getSessionContextMap().remove(sid);
 	}
 
@@ -271,4 +297,23 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 		return new DefaultWriteRequest(session);
 	}
 
+	@Override
+	public Session createSession(Connection conn, Object sid) {
+		Session session = sessionFactory.create(conn, sid);
+		onSessionOpened(session);
+		return session;
+	}
+
+	protected void onSessionOpened(Session session) {
+		addSession(session);// 暂存Sesssion
+	}
+
+	public Connection getConnection(ByteChannel sc) {
+		return connections.get(sc);
+	}
+
+	@Override
+	public Collection<Connection> getConnections() {
+		return connections.values();
+	}
 }

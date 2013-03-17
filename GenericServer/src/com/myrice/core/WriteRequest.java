@@ -6,8 +6,12 @@ public interface WriteRequest extends Runnable {
 
 	void init(Connection session);
 
-	void flush();
+	void flush(Session session);
 
-	int getCount();
+	int getPacketCount();
+
+	int getByteCount();
+
+	long getNanoTime();
 
 }
