@@ -206,4 +206,9 @@ public class DefaultConnection extends POJO implements Connection {
 		recvBuffer = null;
 	}
 
+	@Override
+	public Session createSession(String sessionId) {
+		return getSession().getServerHandler().createSession(this, sessionId);
+	}
+
 }

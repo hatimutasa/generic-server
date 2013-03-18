@@ -31,7 +31,8 @@ public class DefaultSession extends DefaultContext implements Session {
 
 	@Override
 	public void close() {
-		if (conn != null)
+		closed = true;
+		if (conn != null && conn.getSession() == this)
 			conn.close();
 	}
 
