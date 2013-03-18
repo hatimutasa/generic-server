@@ -2,9 +2,9 @@ package com.myrice.core;
 
 import java.nio.channels.SelectableChannel;
 
-public interface ServerHandler<R> extends Context {
+public interface ServerHandler<R, S> extends Context {
 
-	void onError(R request, Throwable e);
+	void onError(S session, Throwable e);
 
 	void onClosed(R request);
 

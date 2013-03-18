@@ -2,11 +2,11 @@ package com.myrice.core;
 
 import java.nio.channels.SelectionKey;
 
-public interface MessageWriter<R> {
+public interface MessageWriter<R,S> {
 
 	void processRequest(SelectionKey key);
 
-	void init(Connector<R> connector);
+	void init(Connector<R,S> connector);
 
 	void destory();
 

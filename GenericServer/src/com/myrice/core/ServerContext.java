@@ -20,7 +20,7 @@ public interface ServerContext extends Context {
 	Connection getConnection(ByteChannel sc);
 
 	/** 获取连接器 */
-	Connector<Connection> getConnector();
+	Connector<Connection, Session> getConnector();
 
 	/** 创建新的Session */
 	Session createSession(Connection conn, Object sid);
@@ -51,7 +51,7 @@ public interface ServerContext extends Context {
 
 	void execute(Runnable runnable);
 
-	Notifier<Connection> getNotifier();
+	Notifier<Connection, Session> getNotifier();
 
 	IFilterChain getFilterChain();
 

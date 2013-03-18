@@ -22,15 +22,15 @@ import com.myrice.core.MessageReader;
 import com.myrice.core.MessageWriter;
 import com.myrice.core.Notifier;
 
-public class DefaultConnector<R> implements Connector<R>, Runnable {
+public class DefaultConnector<R, S> implements Connector<R, S>, Runnable {
 	private static final int QUEUE_REQUEST_MAX = 2048;
 	private Thread thread;
 	private ExecutorService executer;
 
 	protected Selector selector;
 
-	private MessageReader<R> reader;
-	private MessageWriter<R> writer;
+	private MessageReader<R, S> reader;
+	private MessageWriter<R, S> writer;
 
 	private BlockingQueue<SelectionKey> queue4read;// 读
 	private BlockingQueue<SelectionKey> queue4write;// 写
@@ -39,20 +39,21 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 	private BlockingQueue<SocketChannel> queue4client;// 客户端
 	private BlockingQueue<Object[]> queue4medley;// 混合请求
 
-	protected Notifier<R> notifier;
+	protected Notifier<R, S> notifier;
 	private String name = "SelectorHandler-" + nextId();
 
 	public DefaultConnector(ExecutorService executer) throws IOException {
-		this(executer, new DefaultNotifier<R>(), new DefaultMessageReader<R>(),
-				new DefaultMessageWriter<R>());
+		this(executer, new DefaultNotifier<R, S>(),
+				new DefaultMessageReader<R, S>(),
+				new DefaultMessageWriter<R, S>());
 	}
 
 	public DefaultConnector() throws IOException {
 		this(Executors.newCachedThreadPool());
 	}
 
-	public DefaultConnector(ExecutorService executer, Notifier<R> notifer,
-			MessageReader<R> reader, MessageWriter<R> writer)
+	public DefaultConnector(ExecutorService executer, Notifier<R, S> notifer,
+			MessageReader<R, S> reader, MessageWriter<R, S> writer)
 			throws IOException {
 
 		this.executer = executer;
@@ -174,12 +175,13 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 		notifier.init();
 	}
 
+	@SuppressWarnings("unchecked")
 	protected void accept(SelectableChannel sc, R request) throws Exception {
 		try {
 			request = notifier.fireOnAccepted(sc, request);// 必须先通知再请求读数据
 			addRegistor(sc, SelectionKey.OP_READ, request);
 		} catch (Throwable e) {
-			notifier.fireOnError(request, e);
+			notifier.fireOnError((S) ((Connection) request).getSession(), e);
 		}
 	}
 
@@ -321,7 +323,7 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 		}
 	}
 
-	public Notifier<R> getNotifier() {
+	public Notifier<R, S> getNotifier() {
 		return notifier;
 	}
 
@@ -330,8 +332,9 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 		try {
 			queue4read.put(key);
 			selector.wakeup();
-		} catch (InterruptedException e) {
-			notifier.fireOnError((R) key.attachment(), e);
+		} catch (Exception e) {
+			notifier.fireOnError(
+					(S) ((Connection) key.attachment()).getSession(), e);
 		}
 	}
 
@@ -340,17 +343,19 @@ public class DefaultConnector<R> implements Connector<R>, Runnable {
 		try {
 			queue4write.put(key);
 			selector.wakeup();
-		} catch (InterruptedException e) {
-			notifier.fireOnError((R) key.attachment(), e);
+		} catch (Exception e) {
+			notifier.fireOnError(
+					(S) ((Connection) key.attachment()).getSession(), e);
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public void registor(SelectableChannel sc, R request) {
 		try {
 			queue4medley.put(new Object[] { sc, request });
 			selector.wakeup();
 		} catch (InterruptedException e) {
-			notifier.fireOnError(request, e);
+			notifier.fireOnError((S) ((Connection) request).getSession(), e);
 		}
 	}
 

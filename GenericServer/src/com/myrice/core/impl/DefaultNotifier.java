@@ -4,14 +4,15 @@ import java.nio.channels.SelectableChannel;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.myrice.core.Connection;
 import com.myrice.core.Notifier;
 import com.myrice.core.ServerHandler;
 
-public class DefaultNotifier<R> implements Notifier<R> {
-	private List<ServerHandler<R>> listeners;
+public class DefaultNotifier<R, S> implements Notifier<R, S> {
+	private List<ServerHandler<R, S>> listeners;
 
 	public DefaultNotifier() {
-		this.listeners = new LinkedList<ServerHandler<R>>();
+		this.listeners = new LinkedList<ServerHandler<R, S>>();
 	}
 
 	public boolean isEmpty() {
@@ -35,17 +36,18 @@ public class DefaultNotifier<R> implements Notifier<R> {
 		return prev;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void fireOnClosed(R request) {
 		int length = listeners.size();
 		try {
 			for (int i = 0; i < length; i++)
 				listeners.get(i).onClosed(request);
 		} catch (Throwable e) {
-			fireOnError(request, e);
+			fireOnError((S) ((Connection) request).getSession(), e);
 		}
 	}
 
-	public void fireOnError(R request, Throwable e) {
+	public void fireOnError(S request, Throwable e) {
 		int length = listeners.size();
 		try {
 			for (int i = 0; i < length; i++)
@@ -55,6 +57,7 @@ public class DefaultNotifier<R> implements Notifier<R> {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public boolean fireOnRead(R request) {
 		boolean suc = false;
 		int length = listeners.size();
@@ -62,11 +65,12 @@ public class DefaultNotifier<R> implements Notifier<R> {
 			for (int i = 0; i < length; i++)
 				suc = listeners.get(i).onRead(request, suc);
 		} catch (Throwable e) {
-			fireOnError(request, e);
+			fireOnError((S) ((Connection) request).getSession(), e);
 		}
 		return suc;
 	}
 
+	@SuppressWarnings("unchecked")
 	public boolean fireOnWrite(R request) {
 		boolean bool = false;
 		int length = listeners.size();
@@ -74,18 +78,18 @@ public class DefaultNotifier<R> implements Notifier<R> {
 			for (int i = 0; i < length; i++)
 				bool = listeners.get(i).onWrite(request, bool);
 		} catch (Throwable e) {
-			fireOnError(request, e);
+			fireOnError((S) ((Connection) request).getSession(), e);
 		}
 		return bool;
 	}
 
-	public void addHandler(ServerHandler<R> listener) {
+	public void addHandler(ServerHandler<R, S> listener) {
 		if (this.listeners.contains(listener) == false) {
 			this.listeners.add(listener);
 		}
 	}
 
-	public void removeHandler(ServerHandler<R> listener) {
+	public void removeHandler(ServerHandler<R, S> listener) {
 		this.listeners.remove(listener);
 	}
 
@@ -96,8 +100,7 @@ public class DefaultNotifier<R> implements Notifier<R> {
 	}
 
 	public void destory() {
-		int length = listeners.size();
-		for (int i = 0; i < length; i++)
+		for (int i = 0; i < listeners.size(); i++)
 			listeners.get(i).destory();
 	}
 }

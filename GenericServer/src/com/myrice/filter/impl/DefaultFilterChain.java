@@ -20,7 +20,8 @@ public class DefaultFilterChain implements IFilterChain {
 					|| !chain.getFilter().onPrevFilterAdd(this,
 							new PrevFilter(filter))) {
 				throw new IllegalArgumentException(
-						"This filter can not add in front of.");
+						"This filter can not add in front of. "
+								+ chain.getFilter());
 			}
 		}
 		chain = new ChainImpl(filter, chain);

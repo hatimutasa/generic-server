@@ -72,7 +72,7 @@ public class DefaultSession extends DefaultContext implements Session {
 			chain.getFilter().messageEncode(conn, message, output, chain);
 
 		} catch (Throwable e) {
-			server.getNotifier().fireOnError(conn, e);
+			server.getNotifier().fireOnError(this, e);
 		}
 
 	}

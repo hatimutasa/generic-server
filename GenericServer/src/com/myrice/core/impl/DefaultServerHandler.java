@@ -38,8 +38,8 @@ import com.myrice.filter.IProtocolDecodeFilter;
 import com.myrice.filter.impl.DefaultFilterChain;
 import com.myrice.util.TimerManager;
 
-public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
-		implements ServerContext {
+public class DefaultServerHandler extends
+		ServerHandlerAdapter<Connection, Session> implements ServerContext {
 	protected final Logger log = Logger.getLogger(getClass());
 
 	public static final String ATTR_MAX_MESSATE_QUEUE_CAPACITY = "__MAX_MESSATE_QUEUE_CAPACITY__";
@@ -53,12 +53,12 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 
 	private IFilterChain filterChain;
 
-	private Connector<Connection> connector;
-	private Notifier<Connection> notifier;
+	private Connector<Connection, Session> connector;
+	private Notifier<Connection, Session> notifier;
 	private ExecutorService executor;
 	private TimerManager timerManager;
 
-	public DefaultServerHandler(Connector<Connection> connector) {
+	public DefaultServerHandler(Connector<Connection, Session> connector) {
 		this.connector = connector;
 		this.notifier = connector.getNotifier();
 		this.executor = connector.getExecutor();
@@ -116,7 +116,7 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 		return executor;
 	}
 
-	public Notifier<Connection> getNotifier() {
+	public Notifier<Connection, Session> getNotifier() {
 		return notifier;
 	}
 
@@ -160,7 +160,7 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 				TimeUnit.MILLISECONDS);
 	}
 
-	public Connector<Connection> getConnector() {
+	public Connector<Connection, Session> getConnector() {
 		return connector;
 	}
 
@@ -205,12 +205,12 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 	}
 
 	@Override
-	@SuppressWarnings("unchecked")
-	public void onError(Connection conn, Throwable e) {
+	@SuppressWarnings({ "unchecked" })
+	public void onError(Session session, Throwable e) {
 		IChain<IErrFilter> chain = (IChain<IErrFilter>) filterChain
 				.getFirstChain(IFilterChain.FILTER_ERROR);
 		if (chain != null) {
-			chain.getFilter().serverExcept(conn, e, chain);
+			chain.getFilter().serverExcept(session, e, chain);
 		}
 	}
 
