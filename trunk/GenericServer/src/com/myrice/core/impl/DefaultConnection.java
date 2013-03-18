@@ -150,10 +150,16 @@ public class DefaultConnection extends POJO implements Connection {
 			closed = true;
 			channel.close();
 		} catch (IOException e) {
+		} finally {
+			Thread.dumpStack();
 		}
 	}
 
 	public boolean isClosed() {
+		SocketChannel sc = ((SocketChannel) channel);
+		if (!this.channel.isOpen() || !sc.isConnected()
+				|| sc.socket().isClosed() || !sc.socket().isConnected())
+			return true;
 		return closed;
 	}
 

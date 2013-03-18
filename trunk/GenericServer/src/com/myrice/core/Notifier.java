@@ -2,11 +2,11 @@ package com.myrice.core;
 
 import java.nio.channels.SelectableChannel;
 
-public interface Notifier<R> {
+public interface Notifier<R, S> {
 
-	void addHandler(ServerHandler<R> listener);
+	void addHandler(ServerHandler<R, S> listener);
 
-	void removeHandler(ServerHandler<R> listener);
+	void removeHandler(ServerHandler<R, S> listener);
 
 	void fireOnAccept();
 
@@ -18,7 +18,7 @@ public interface Notifier<R> {
 
 	void fireOnClosed(R request);
 
-	void fireOnError(R request, Throwable e);
+	void fireOnError(S request, Throwable e);
 
 	boolean isEmpty();
 

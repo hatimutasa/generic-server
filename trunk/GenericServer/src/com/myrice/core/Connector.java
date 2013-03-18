@@ -13,13 +13,13 @@ import java.util.concurrent.ExecutorService;
  * @param <W>
  *            响应类型
  */
-public interface Connector<C> {
+public interface Connector<C, S> {
 
 	void start();
 
 	void stop();
 
-	Notifier<C> getNotifier();
+	Notifier<C, S> getNotifier();
 
 	void processRead(SelectionKey key);
 

@@ -4,8 +4,8 @@ import java.nio.channels.SelectableChannel;
 
 import com.myrice.core.ServerHandler;
 
-public class ServerHandlerAdapter<R> extends DefaultContext implements
-		ServerHandler<R> {
+public class ServerHandlerAdapter<R, S> extends DefaultContext implements
+		ServerHandler<R, S> {
 
 	public void init() {
 	}
@@ -23,7 +23,7 @@ public class ServerHandlerAdapter<R> extends DefaultContext implements
 	public void onClosed(R request) {
 	}
 
-	public void onError(R request, Throwable e) {
+	public void onError(S request, Throwable e) {
 		e.printStackTrace();
 	}
 
