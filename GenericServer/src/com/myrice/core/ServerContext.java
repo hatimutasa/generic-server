@@ -29,6 +29,8 @@ public interface ServerContext extends Context {
 
 	Session getSession(String sid);
 
+	boolean hasSessionId(String sessionId);
+
 	Session removeSession(String sid);
 
 	MessageQueue createMessageQueue();

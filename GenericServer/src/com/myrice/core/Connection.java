@@ -6,6 +6,9 @@ import java.nio.channels.ByteChannel;
 
 public interface Connection {
 
+	/** 创建新的Session */
+	Session createSession(String sessionId);
+
 	/** 设置默认Session */
 	void setSession(Session session);
 

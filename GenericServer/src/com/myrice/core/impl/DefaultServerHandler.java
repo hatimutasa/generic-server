@@ -288,6 +288,11 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 		return getSessionContextMap().put(session.getSessionId(), session);
 	}
 
+	@Override
+	public boolean hasSessionId(String sessionId) {
+		return getSessionContextMap().containsKey(sessionId);
+	}
+
 	public Session getSession(String sid) {
 		return getSessionContextMap().get(sid);
 	}
@@ -324,22 +329,19 @@ public class DefaultServerHandler extends ServerHandlerAdapter<Connection>
 
 	@Override
 	public Session createSession(Connection conn, Object sid) {
+		if (hasSessionId(String.valueOf(sid))) {
+			Session session = getSession(String.valueOf(sid));
+			throw new RuntimeException("Already exists sessionId: "
+					+ session.getSessionId() + "  Connection: "
+					+ session.getInetAddress());
+		}
 		Session session = sessionFactory.create(conn, sid);
-		onSessionOpened(session);
+		if (conn.getSession() != null)
+			onSessionOpened(session);
 		return session;
 	}
 
 	protected void onSessionOpened(Session session) {
-		Session session0 = getSession(session.getSessionId());
-		if (session0 != null && session0 != session) {
-			session.close();
-			throw new RuntimeException("Already exists sessionId: "
-					+ session.getSessionId() + "  Connection: "
-					+ session.getInetAddress() + "  =>  "
-					+ session0.getInetAddress()
-
-			);
-		}
 		addSession(session);// 暂存Sesssion
 	}
 
