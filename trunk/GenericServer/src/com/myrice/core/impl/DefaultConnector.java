@@ -181,7 +181,9 @@ public class DefaultConnector<R, S> implements Connector<R, S>, Runnable {
 			request = notifier.fireOnAccepted(sc, request);// 必须先通知再请求读数据
 			addRegistor(sc, SelectionKey.OP_READ, request);
 		} catch (Throwable e) {
-			notifier.fireOnError((S) ((Connection) request).getSession(), e);
+			notifier.fireOnError(
+					request != null ? (S) ((Connection) request).getSession()
+							: null, e);
 		}
 	}
 

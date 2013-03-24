@@ -15,6 +15,7 @@ import com.myrice.core.WriteRequest;
 import com.myrice.util.POJO;
 
 public class DefaultConnection extends POJO implements Connection {
+	private Session session;
 
 	protected ByteChannel channel;
 
@@ -27,8 +28,6 @@ public class DefaultConnection extends POJO implements Connection {
 
 	private String inetAddress;
 
-	private Session session;
-
 	private boolean closed;
 
 	private ByteBuffer recvBuffer;
@@ -38,17 +37,21 @@ public class DefaultConnection extends POJO implements Connection {
 
 	public void init(ByteChannel sc) {
 		this.channel = sc;
+		this.localAddress = getAddress(sc, false);
+		this.localPort = getPort(sc, false);
 		this.protocol = getProtocol(sc);
 		this.address = getAddress(sc, true);
 		this.port = getPort(sc, true);
-		this.localAddress = getAddress(sc, false);
-		this.localPort = getPort(sc, false);
+		this.inetAddress = null;
 		this.closed = false;
+		recvBuffer = null;
+		writeBusy = false;
 	}
 
 	public void destory() {
 		this.recvBuffer = null;
-		this.writeBusy = true;
+		this.writeBusy = false;
+		this.writer = null;
 	}
 
 	public void onClosed() {
@@ -106,7 +109,7 @@ public class DefaultConnection extends POJO implements Connection {
 
 	private int getBufferCapacity() {
 		return (Integer) session.getCoverAttributeOfUser(
-				Session.IO_BUFFER_CAPACITY, Session.CAPACITY);
+				Session.IO_BUFFER_CAPACITY, Session.DEFAULT_IO_BUFFER_CAPACITY);
 	}
 
 	private String getProtocol(ByteChannel sc) {
@@ -146,6 +149,8 @@ public class DefaultConnection extends POJO implements Connection {
 	}
 
 	public void close() {
+		if (closed)
+			return;
 		try {
 			closed = true;
 			channel.close();
@@ -217,4 +222,10 @@ public class DefaultConnection extends POJO implements Connection {
 		return getSession().getServerHandler().createSession(this, sessionId);
 	}
 
+	@Override
+	public String toString() {
+		return new StringBuilder("[").append(getLocalAddress()).append(":")
+				.append(getLocalPort()).append("  =>  ")
+				.append(getInetAddress()).append("]").toString();
+	}
 }
