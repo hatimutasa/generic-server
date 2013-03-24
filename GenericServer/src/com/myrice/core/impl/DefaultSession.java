@@ -31,9 +31,14 @@ public class DefaultSession extends DefaultContext implements Session {
 
 	@Override
 	public void close() {
-		closed = true;
-		if (conn != null && conn.getSession() == this)
+		setClosed(true);
+		if (conn != null && isDefault())
 			conn.close();
+	}
+
+	@Override
+	public boolean isDefault() {
+		return conn.getSession() == this;
 	}
 
 	public void flush() {
@@ -103,10 +108,10 @@ public class DefaultSession extends DefaultContext implements Session {
 	}
 
 	public MessageQueue getMessageInputQueue() {
-		MessageQueue queue = (MessageQueue) getAttribute(MESSAGE_QUEUE);
+		MessageQueue queue = (MessageQueue) getAttribute(MESSAGE_QUEUE_IN);
 		if (queue == null) {
 			queue = server.createMessageQueue();
-			setAttribute(MESSAGE_QUEUE, queue);
+			setAttribute(MESSAGE_QUEUE_IN, queue);
 		}
 		return queue;
 	}

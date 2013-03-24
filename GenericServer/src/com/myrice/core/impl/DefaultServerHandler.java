@@ -336,7 +336,7 @@ public class DefaultServerHandler extends
 					+ session.getInetAddress());
 		}
 		Session session = sessionFactory.create(conn, sid);
-		if (conn.getSession() != null)
+		if (session.isDefault() == false)
 			onSessionOpened(session);
 		return session;
 	}

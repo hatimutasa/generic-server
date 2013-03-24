@@ -1,15 +1,14 @@
 package com.myrice.core;
 
 public interface Session extends Context {
+	int DEFAULT_IO_BUFFER_CAPACITY = 1024;
 
-	String MESSAGE_QUEUE = "__MESSAGE_QUEUE__";
+	String MESSAGE_QUEUE_IN = "__MESSAGE_QUEUE_IN__";
 	String MESSAGE_QUEUE_OUT = "__MESSAGE_QUEUE_OUT__";
 
 	String IO_BUFFER_CAPACITY = "__IO_BUFFER_CAPACITY__";
 	String IO_PROTOCOL_ENCODE = "__IO_PROTOCOL_ENCODE__";
 	String IO_PROTOCOL_DECODE = "__IO_PROTOCOL_DECODE__";
-
-	int CAPACITY = 1024;
 
 	/**
 	 * 获取核心处理器
@@ -72,4 +71,5 @@ public interface Session extends Context {
 
 	void close();
 
+	boolean isDefault();
 }
