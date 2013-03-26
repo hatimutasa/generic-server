@@ -290,15 +290,21 @@ public class DefaultServerHandler extends
 
 	@Override
 	public boolean hasSessionId(String sessionId) {
+		if (sessionId == null)
+			return false;
 		return getSessionContextMap().containsKey(sessionId);
 	}
 
-	public Session getSession(String sid) {
-		return getSessionContextMap().get(sid);
+	public Session getSession(String sessionId) {
+		if (sessionId == null)
+			return null;
+		return getSessionContextMap().get(sessionId);
 	}
 
-	public Session removeSession(String sid) {
-		return getSessionContextMap().remove(sid);
+	public Session removeSession(String sessionId) {
+		if (sessionId == null)
+			return null;
+		return getSessionContextMap().remove(sessionId);
 	}
 
 	protected Map<String, Session> getSessionContextMap() {
@@ -342,7 +348,9 @@ public class DefaultServerHandler extends
 	}
 
 	protected void onSessionOpened(Session session) {
-		addSession(session);// 暂存Sesssion
+		if (session.getSessionId() != null) {
+			addSession(session);// 暂存Sesssion
+		}
 	}
 
 	public Connection getConnection(ByteChannel sc) {
