@@ -100,14 +100,12 @@ public class DefaultWriteRequest implements WriteRequest, Runnable {
 		if (conn.isClosed()) {
 			log.warn("flush invalid, Connect [" + conn.getInetAddress()
 					+ "] is closed!");
-			Thread.dumpStack();
 			return;
 		}
 		if (session.getConnection() != conn) {
 			log.warn("flush invalid, Connect [" + conn.getInetAddress()
 					+ "] and [" + session.getConnection().getInetAddress()
 					+ "] is distinct!!!");
-			Thread.dumpStack();
 			return;
 		}
 		if (!flushQueue.contains(session)) {
@@ -117,17 +115,17 @@ public class DefaultWriteRequest implements WriteRequest, Runnable {
 				e.printStackTrace();
 			}
 		} else {
-//			log.debug("Already add session flush queue: "
-//					+ session.getSessionId() + " , outputQueue: "
-//					+ session.getMessageOutputQueue().size());
+			//			log.debug("Already add session flush queue: "
+			//					+ session.getSessionId() + " , outputQueue: "
+			//					+ session.getMessageOutputQueue().size());
 		}
 		synchronized (this) {
 			if (!conn.isBusy()) {
 				conn.setBusy(true);
 				context.execute(this);
 			} else {
-//				log.warn("Already flush, Connect[" + conn.getInetAddress()
-//						+ "] is writing busy!");
+				//				log.warn("Already flush, Connect[" + conn.getInetAddress()
+				//						+ "] is writing busy!");
 			}
 		}
 	}
