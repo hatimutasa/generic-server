@@ -1,5 +1,6 @@
 package com.myrice.core.impl;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -11,6 +12,7 @@ import com.myrice.core.MessageQueue;
 public class DefaultMessageQueue implements MessageQueue {
 	private BlockingQueue<Object> queue;
 	private int capacity;
+	private int bytesSize;
 
 	public DefaultMessageQueue(int capacity) {
 		this.capacity = capacity;
@@ -19,7 +21,11 @@ public class DefaultMessageQueue implements MessageQueue {
 
 	public Object removeFirst() {
 		try {
-			return queue.take();
+			Object message = queue.take();
+			if (message instanceof ByteBuffer) {
+				bytesSize -= ((ByteBuffer) message).remaining();
+			}
+			return message;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -29,6 +35,9 @@ public class DefaultMessageQueue implements MessageQueue {
 	public void putLast(Object message) {
 		try {
 			queue.put(message);
+			if (message instanceof ByteBuffer) {
+				bytesSize += ((ByteBuffer) message).remaining();
+			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -60,6 +69,12 @@ public class DefaultMessageQueue implements MessageQueue {
 	public Collection<Object> removeAll() {
 		Collection<Object> list = new ArrayList<Object>();
 		queue.drainTo(list);
+		bytesSize = 0;
 		return list;
+	}
+
+	@Override
+	public int getBytesSize() {
+		return bytesSize;
 	}
 }
