@@ -1,6 +1,7 @@
 package com.myrice.core.impl;
 
 import java.nio.channels.ByteChannel;
+import java.nio.channels.SocketChannel;
 
 import org.apache.log4j.Logger;
 
@@ -63,6 +64,13 @@ public class DefaultSession extends DefaultContext implements Session {
 		if (server == null)
 			throw new AccessException("session is destory!");
 
+		// socket 已经被关闭
+		if (conn.getSocketChannel() instanceof SocketChannel) {
+			if (((SocketChannel) conn.getSocketChannel()).socket().isClosed()) {
+				conn.close();
+				return;
+			}
+		}
 		IChain<IProtocolEncodeFilter> chain = (IChain<IProtocolEncodeFilter>) server
 				.getFilterChain().getFirstChain(
 						IFilterChain.FILTER_PROTOCOL_ENCODE);
