@@ -91,13 +91,13 @@ public class DefaultServerHandler extends
 		return getSessionContextMap().size();
 	}
 
-	public List<Session> getSessions() {
+	public List<Session> getSessionAll() {
 		return new ArrayList<Session>(getSessionContextMap().values());
 	}
 
 	@Override
 	public String[] getSessionIds() {
-		List<Session> list = this.getSessions();
+		List<Session> list = this.getSessionAll();
 		String[] ids = new String[list.size()];
 		for (int i = 0; i < ids.length; i++)
 			ids[i] = list.get(i).getSessionId();
