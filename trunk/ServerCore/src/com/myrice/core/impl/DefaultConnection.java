@@ -149,9 +149,9 @@ public class DefaultConnection extends POJO implements Connection {
 	}
 
 	public void close() {
-		if (closed)
-			return;
 		try {
+			if (closed)
+				return;
 			closed = true;
 			channel.close();
 		} catch (IOException e) {
