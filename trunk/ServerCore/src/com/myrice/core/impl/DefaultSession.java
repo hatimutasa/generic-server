@@ -65,8 +65,10 @@ public class DefaultSession extends DefaultContext implements Session {
 			throw new AccessException("session is destory!");
 
 		// socket 已经被关闭
-		if (conn.getSocketChannel() instanceof SocketChannel) {
-			if (((SocketChannel) conn.getSocketChannel()).socket().isClosed()) {
+		if (!conn.isClosed()) {
+			if (conn.getSocketChannel() instanceof SocketChannel
+					&& ((SocketChannel) conn.getSocketChannel()).socket()
+							.isClosed()) {
 				conn.close();
 				return;
 			}
