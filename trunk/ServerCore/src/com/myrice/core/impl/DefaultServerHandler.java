@@ -260,7 +260,7 @@ public class DefaultServerHandler extends
 		return t;
 	}
 
-	protected class MessageTask implements Runnable {
+	protected static class MessageTask implements Runnable {
 		Session session;
 		Object message;
 		IChain<IMessageFilter> chain;
