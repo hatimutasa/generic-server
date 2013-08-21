@@ -13,10 +13,10 @@ import com.myrice.core.Connector;
 import com.myrice.core.MessageWriter;
 import com.myrice.core.Notifier;
 
-public class DefaultMessageWriter<R,S> implements MessageWriter<R,S> {
+public class DefaultMessageWriter<R, S> implements MessageWriter<R, S> {
 	private static final int CACHE_TASK_MAX = 50;
-	private Connector<R,S> connector;
-	private Notifier<R,S> notifier;
+	private Connector<R, S> connector;
+	private Notifier<R, S> notifier;
 	private Executor executor;
 
 	public DefaultMessageWriter() {
@@ -51,7 +51,7 @@ public class DefaultMessageWriter<R,S> implements MessageWriter<R,S> {
 		this.notifier = null;
 	}
 
-	public void init(Connector<R,S> connector) {
+	public void init(Connector<R, S> connector) {
 		this.connector = connector;
 		this.notifier = connector.getNotifier();
 

@@ -47,7 +47,6 @@ public class DefaultMessageQueue implements MessageQueue {
 		return queue.isEmpty();
 	}
 
-	@Override
 	public int size() {
 		return queue.size();
 	}
@@ -73,7 +72,6 @@ public class DefaultMessageQueue implements MessageQueue {
 		return list;
 	}
 
-	@Override
 	public int getBytesSize() {
 		return bytesSize;
 	}

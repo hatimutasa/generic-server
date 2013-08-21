@@ -13,10 +13,10 @@ import com.myrice.core.Connector;
 import com.myrice.core.MessageReader;
 import com.myrice.core.Notifier;
 
-public class DefaultMessageReader<R,S> implements MessageReader<R,S> {
+public class DefaultMessageReader<R, S> implements MessageReader<R, S> {
 	private static final int CACHE_TASK_MAX = 50;
-	private Connector<R,S> connector;
-	private Notifier<R,S> notifier;
+	private Connector<R, S> connector;
+	private Notifier<R, S> notifier;
 	private Executor executor;
 
 	public DefaultMessageReader() {
@@ -49,7 +49,7 @@ public class DefaultMessageReader<R,S> implements MessageReader<R,S> {
 		}
 	}
 
-	public void init(Connector<R,S> connector) {
+	public void init(Connector<R, S> connector) {
 		this.connector = connector;
 		notifier = connector.getNotifier();
 		if (executor == null)
