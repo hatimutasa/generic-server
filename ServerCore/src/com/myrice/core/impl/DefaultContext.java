@@ -18,22 +18,18 @@ import com.myrice.util.POJO;
 public class DefaultContext extends POJO implements Remote, Context {
 	private Map<Object, Object> context = new HashMap<Object, Object>(1);
 
-	@Override
 	public boolean contains(Object key) {
 		return context.containsKey(key);
 	}
 
-	@Override
 	public Object getAttribute(Object key) {
 		return context.get(key);
 	}
 
-	@Override
 	public Object removeAttribute(Object key) {
 		return context.remove(key);
 	}
 
-	@Override
 	public Object setAttribute(Object key, Object value) {
 		return context.put(key, value);
 	}

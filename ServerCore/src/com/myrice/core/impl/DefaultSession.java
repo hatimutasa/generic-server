@@ -30,14 +30,12 @@ public class DefaultSession extends DefaultContext implements Session {
 		this.sessionId = sessionId;
 	}
 
-	@Override
 	public void close() {
 		setClosed(true);
 		if (conn != null && isDefault())
 			conn.close();
 	}
 
-	@Override
 	public boolean isDefault() {
 		return conn.getSession() == this;
 	}
@@ -172,12 +170,10 @@ public class DefaultSession extends DefaultContext implements Session {
 		return conn.getRemotePort();
 	}
 
-	@Override
 	public String getLocalAddress() {
 		return conn.getLocalAddress();
 	}
 
-	@Override
 	public int getLocalPort() {
 		return conn.getLocalPort();
 	}

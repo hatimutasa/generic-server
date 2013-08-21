@@ -104,10 +104,12 @@ public class DefaultServerHandler extends
 		return ids;
 	}
 
+	@Override
 	public SessionFactory getSessionFactory() {
 		return sessionFactory;
 	}
 
+	@Override
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		this.sessionFactory = sessionFactory;
 	}
@@ -116,10 +118,12 @@ public class DefaultServerHandler extends
 		return executor;
 	}
 
+	@Override
 	public Notifier<Connection, Session> getNotifier() {
 		return notifier;
 	}
 
+	@Override
 	public void execute(Runnable run) {
 		if (executor == null || executor.isShutdown()) {
 			log.error("execute failed!  runable:" + run);
@@ -141,6 +145,8 @@ public class DefaultServerHandler extends
 	 *            延迟时长
 	 * @return
 	 */
+
+	@Override
 	public ScheduledFuture<?> schedule(Runnable run, long delay) {
 		return timerManager.schedule(run, delay, TimeUnit.MILLISECONDS);
 	}
@@ -155,11 +161,14 @@ public class DefaultServerHandler extends
 	 *            循环周期
 	 * @return
 	 */
+
+	@Override
 	public ScheduledFuture<?> schedule(Runnable run, long delay, long period) {
 		return timerManager.scheduleAtFixedRate(run, delay, period,
 				TimeUnit.MILLISECONDS);
 	}
 
+	@Override
 	public Connector<Connection, Session> getConnector() {
 		return connector;
 	}
@@ -280,10 +289,12 @@ public class DefaultServerHandler extends
 	private static final Queue<MessageTask> queue = new ArrayBlockingQueue<MessageTask>(
 			MAX_MESSAGE_QUEUE_CAPACITY);
 
+	@Override
 	public IFilterChain getFilterChain() {
 		return filterChain;
 	}
 
+	@Override
 	public Session addSession(Session session) {
 		return getSessionContextMap().put(session.getSessionId(), session);
 	}
@@ -295,12 +306,14 @@ public class DefaultServerHandler extends
 		return getSessionContextMap().containsKey(sessionId);
 	}
 
+	@Override
 	public Session getSession(String sessionId) {
 		if (sessionId == null)
 			return null;
 		return getSessionContextMap().get(sessionId);
 	}
 
+	@Override
 	public Session removeSession(String sessionId) {
 		if (sessionId == null)
 			return null;
@@ -321,6 +334,7 @@ public class DefaultServerHandler extends
 		return new ConcurrentHashMap<String, Session>();
 	}
 
+	@Override
 	public MessageQueue createMessageQueue() {
 		int capacity = MAX_MESSAGE_QUEUE_CAPACITY;
 		if (contains(ATTR_MAX_MESSATE_QUEUE_CAPACITY)) {
@@ -329,6 +343,7 @@ public class DefaultServerHandler extends
 		return new DefaultMessageQueue(capacity);
 	}
 
+	@Override
 	public WriteRequest createWriteRequest(Connection session) {
 		return new DefaultWriteRequest(session);
 	}
@@ -353,6 +368,7 @@ public class DefaultServerHandler extends
 		}
 	}
 
+	@Override
 	public Connection getConnection(ByteChannel sc) {
 		return connections.get(sc);
 	}

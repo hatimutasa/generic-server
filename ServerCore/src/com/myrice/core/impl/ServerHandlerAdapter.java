@@ -46,119 +46,99 @@ public class ServerHandlerAdapter<R, S> extends DefaultContext implements
 		return false;
 	}
 
-	@Override
 	public int getSessionCount() {
 
 		return 0;
 	}
 
-	@Override
 	public String[] getSessionIds() {
 
 		return null;
 	}
 
-	@Override
 	public Collection<Connection> getConnections() {
 
 		return null;
 	}
 
-	@Override
 	public Connection getConnection(ByteChannel sc) {
 
 		return null;
 	}
 
-	@Override
 	public Connector<Connection, Session> getConnector() {
 
 		return null;
 	}
 
-	@Override
 	public Session createSession(Connection conn, Object sid) {
 
 		return null;
 	}
 
-	@Override
 	public Session addSession(Session session) {
 
 		return null;
 	}
 
-	@Override
 	public Session getSession(String sid) {
 
 		return null;
 	}
 
-	@Override
 	public boolean hasSessionId(String sessionId) {
 
 		return false;
 	}
 
-	@Override
 	public Session removeSession(String sid) {
 
 		return null;
 	}
 
-	@Override
 	public MessageQueue createMessageQueue() {
 
 		return null;
 	}
 
-	@Override
 	public ScheduledFuture<?> schedule(Runnable runnable, long delay) {
 
 		return null;
 	}
 
-	@Override
 	public ScheduledFuture<?> schedule(Runnable runnable, long delay,
 			long period) {
 
 		return null;
 	}
 
-	@Override
 	public void execute(Runnable run, long delay) {
 
 	}
 
-	@Override
 	public void execute(Runnable runnable) {
 
 	}
 
-	@Override
 	public Notifier<Connection, Session> getNotifier() {
 
 		return null;
 	}
 
-	@Override
 	public IFilterChain getFilterChain() {
 
 		return null;
 	}
 
-	@Override
 	public WriteRequest createWriteRequest(Connection session) {
 
 		return null;
 	}
 
-	@Override
 	public void setSessionFactory(SessionFactory sessionFactory) {
 
 	}
 
-	@Override
 	public SessionFactory getSessionFactory() {
 
 		return null;

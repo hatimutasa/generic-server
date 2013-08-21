@@ -17,6 +17,7 @@ public interface Context {
 	Object removeAttribute(Object key);
 
 	boolean contains(String name);
+
 	boolean contains(Object key);
 
 	String[] getAttributeNames();
